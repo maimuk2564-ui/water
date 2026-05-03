@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบประปาหมู่บ้านสุขสำราญ</title>
+
+    <!-- Tailwind CSS (ดึงจากออนไลน์) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome Icons (ดึงจากออนไลน์) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts: Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <!-- React & ReactDOM (ดึงจากออนไลน์) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel สำหรับแปลงโค้ด React ให้เบราว์เซอร์อ่านออก -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+    </style>
+</head>
+<body>
+    <!-- จุดที่ระบบประปาจะมาแสดงผล -->
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // ดึงคำสั่งต่างๆ ของ React มาใช้งาน
+        const { useState, useEffect, useMemo } = React;
+
+        // --- Configuration & Constants ---
+        const WATER_BILLS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ21tIMjRNKBcuSDz12h3fNE4aL1NP2Piz4RgtutVDNfUGZiS8jGc4j4IqmS1-YW4WPX9IUj22eUgeM/pub?gid=0&single=true&output=csv";
+        const EXPENSES_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ21tIMjRNKBcuSDz12h3fNE4aL1NP2Piz4RgtutVDNfUGZiS8jGc4j4IqmS1-YW4WPX9IUj22eUgeM/pub?gid=677756315&single=true&output=csv";
+        const LOGIN_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSwOa_3_Qp02ewIlHy1XbeMftubIkCbXFvX0NGU0fjboYRq-XLlDblcTBXI4f1ur9ZQ01nTigHYE7QJ/pub?output=csv";
+
+        const WATER_RATE = 8;
+        const MAINTENANCE_FEE = 15;
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyV30gTDuqquU9CffmuK6aDB0Z-Vz8pOujiPmMSJ4c0VIo3X0K0XieJAPqsespEovNKOg/exec"; 
+
+        // คอมโพเนนต์สำหรับแสดงไอคอน
+        const Icon = ({ name, size = 20, className = "" }) => (
+            <i className={`fa-solid ${name} ${className}`} style={{ fontSize: size }}></i>
+        );
+
+        // เพิ่มฟังก์ชันสำหรับแปลงตัวเลขเป็นตัวอักษรไทย
+        const THBText = (number) => {
+            const numberText = ["ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า", "สิบ"];
+            const nameText = ["", "สิบ", "ร้อย", "พัน", "หมื่น", "แสน", "ล้าน"];
+            let bahtText = "";
+            if (isNaN(number) || number === 0) return "ศูนย์บาทถ้วน";
+            let strNum = Math.floor(Math.abs(number)).toString();
+            let strStang = (Math.abs(number) - Math.floor(Math.abs(number))).toFixed(2).split('.')[1];
+
+            const convertToText = (str) => {
+                let text = '';
+                let len = str.length;
+                for (let i = 0; i < len; i++) {
+                    let n = parseInt(str[i]);
+                    if (n !== 0) {
+                        if (i === len - 1 && n === 1 && len > 1 && parseInt(str[len-2]) !== 0) text += "เอ็ด";
+                        else if (i === len - 2 && n === 2) text += "ยี่";
+                        else if (i === len - 2 && n === 1) text += "";
+                        else text += numberText[n];
+                        text += nameText[len - i - 1];
+                    }
+                }
+                return text;
+            };
+
+            bahtText += convertToText(strNum) + "บาท";
+            if (parseInt(strStang) === 0) bahtText += "ถ้วน";
+            else bahtText += convertToText(strStang) + "สตางค์";
+            return bahtText;
+        };
+
+        const TransparencyCards = ({ metrics }) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all">
+                    <div className="bg-blue-600 text-white p-3 rounded-2xl w-fit mb-4"><Icon name="fa-droplet" size={24} /></div>
+                    <p className="text-slate-400 text-xs font-semibold uppercase mb-1">ค่าน้ำที่เก็บได้</p>
+                    <p className="text-3xl font-extrabold text-slate-800 tracking-tight">฿{metrics.currentMonthRevenue.toLocaleString()}</p>
+                </div>
+                <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all">
+                    <div className="bg-slate-400 text-white p-3 rounded-2xl w-fit mb-4"><Icon name="fa-bolt" size={24} /></div>
+                    <p className="text-slate-400 text-xs font-semibold uppercase mb-1">จ่ายค่าไฟสะสม</p>
+                    <p className="text-3xl font-extrabold text-slate-800 tracking-tight">฿{metrics.totalElectricPaid.toLocaleString()}</p>
+                </div>
+                <div className="bg-yellow-400 p-6 rounded-[2rem] shadow-sm hover:shadow-md transition-all">
+                    <div className="bg-white text-yellow-600 p-3 rounded-2xl w-fit mb-4"><Icon name="fa-calendar" size={24} /></div>
+                    <p className="text-yellow-800 text-xs font-semibold uppercase mb-1">ค่าไฟงวดล่าสุด</p>
+                    <p className="text-3xl font-extrabold text-slate-900 tracking-tight">฿{metrics.latestElectric.toLocaleString()}</p>
+                </div>
+                <div className="bg-blue-900 p-6 rounded-[2rem] shadow-xl">
+                    <div className="bg-blue-600 text-white p-3 rounded-2xl w-fit mb-4"><Icon name="fa-wallet" size={24} /></div>
+                    <p className="text-blue-200 text-xs font-semibold uppercase mb-1">เงินคงเหลือกองทุน</p>
+                    <p className="text-3xl font-extrabold text-white tracking-tight">฿{metrics.latestBalance.toLocaleString()}</p>
+                </div>
+            </div>
+        );
+
+        const ResidentView = ({ waterBills, searchQuery, setSearchQuery, metrics }) => {
+            const [selectedDate, setSelectedDate] = useState('');
+            const uniqueDates = useMemo(() => [...new Set(waterBills.map(b => b.date))].filter(Boolean), [waterBills]);
+
+            const filteredBills = useMemo(() => {
+                return waterBills.filter(b => {
+                    const query = searchQuery.trim().toLowerCase();
+                    const matchQuery = !query || (b.houseNo && b.houseNo.toLowerCase().includes(query)) || (b.name && b.name.toLowerCase().includes(query));
+                    const matchDate = !selectedDate || b.date === selectedDate;
+                    return matchQuery && matchDate;
+                });
+            }, [waterBills, searchQuery, selectedDate]);
+
+            return (
+                <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in duration-700">
+                    <div className="text-center py-10 space-y-2">
+                        <div className="flex justify-center mb-4"><div className="p-4 bg-blue-100 rounded-full"><Icon name="fa-droplet" size={40} className="text-blue-600" /></div></div>
+                        <h1 className="text-5xl font-extrabold text-slate-900 tracking-tighter">ตรวจสอบประปาหมู่บ้าน</h1>
+                        <p className="text-slate-400 text-lg font-medium">โปร่งใส ตรวจสอบได้ เพื่อความเป็นธรรมของชุมชน</p>
+                    </div>
+                    <div className="space-y-6">
+                        <h2 className="text-xl font-bold text-slate-700 flex items-center gap-2 px-2 uppercase tracking-widest"><Icon name="fa-chart-simple" size={20} className="text-blue-500" /> Financial Dashboard</h2>
+                        <TransparencyCards metrics={metrics} />
+                    </div>
+                    <div className="bg-white rounded-[2.5rem] p-8 md:p-12 border border-slate-100 shadow-xl space-y-10">
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                            <h2 className="text-3xl font-extrabold text-slate-800">ค้นหาประวัติการใช้น้ำ</h2>
+                            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+                                <select className="px-6 py-5 bg-slate-50 border-none rounded-[1.5rem] text-lg font-medium outline-none focus:ring-4 focus:ring-blue-100 transition-all shadow-inner text-slate-600 cursor-pointer" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}>
+                                    <option value="">-- ทุกรอบบิล --</option>
+                                    {uniqueDates.map((date, idx) => <option key={idx} value={date}>รอบวันที่ {date}</option>)}
+                                </select>
+                                <div className="relative w-full sm:w-[350px]">
+                                    <Icon name="fa-magnifying-glass" size={24} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input type="text" placeholder="ค้นหาบ้านเลขที่ หรือ ชื่อ-สกุล..." className="w-full pl-14 pr-6 py-5 bg-slate-50 border-none rounded-[1.5rem] text-xl font-medium outline-none focus:ring-4 focus:ring-blue-100 transition-all shadow-inner placeholder-slate-400" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {searchQuery ? (
+                            filteredBills.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {filteredBills.map((bill, idx) => (
+                                        <div key={idx} className="bg-slate-50 rounded-[2rem] p-8 border border-white flex flex-col gap-6 shadow-sm hover:shadow-lg transition-all group">
+                                            <div className="flex justify-between items-start">
+                                                <div className="space-y-2">
+                                                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${bill.status === 'ชำระแล้ว' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{bill.status}</span>
+                                                    <h3 className="text-2xl font-extrabold text-slate-800 tracking-tight">บ้านเลขที่ {bill.houseNo}</h3>
+                                                    <p className="text-slate-500 font-medium">{bill.name}</p>
+                                                    <p className="text-xs font-bold text-blue-500 pt-1">รอบบิล: {bill.date}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">ยอดชำระสุทธิ</p>
+                                                    <p className="text-4xl font-extrabold text-blue-600">฿{bill.total.toLocaleString()}</p>
+                                                </div>
+                                            </div>
+                                            <div className="h-px bg-slate-200 w-full" />
+                                            <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-sm">
+                                                <div className="space-y-1"><p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">เลขมิเตอร์</p><p className="font-extrabold text-slate-700 bg-white px-3 py-1.5 rounded-xl border border-slate-100 inline-block">{bill.prev} ➔ {bill.after}</p></div>
+                                                <div className="space-y-1"><p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">ใช้น้ำไป</p><p className="font-extrabold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100 inline-block">{bill.unit} หน่วย</p></div>
+                                                <div className="space-y-1"><p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">ค่าน้ำ (8 บาท/หน่วย)</p><p className="font-extrabold text-slate-700">฿{bill.waterCost.toLocaleString()}</p></div>
+                                                <div className="space-y-1"><p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">ค่าบำรุงรักษา</p><p className="font-extrabold text-slate-700">฿{bill.maintenance.toLocaleString()}</p></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="py-16 text-center space-y-4">
+                                    <div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto text-slate-300"><Icon name="fa-magnifying-glass" size={32} /></div>
+                                    <p className="text-slate-400 font-medium text-lg">ไม่พบข้อมูลการใช้น้ำจากคำค้นหาหรือรอบบิลนี้</p>
+                                </div>
+                            )
+                        ) : (
+                            <div className="py-16 text-center space-y-4">
+                                <div className="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto text-blue-300"><Icon name="fa-users" size={32} /></div>
+                                <p className="text-slate-400 font-medium text-lg">กรุณากรอกบ้านเลขที่ หรือ ชื่อ เพื่อดูรายละเอียดค่าน้ำ</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const AdminDashboard = ({ setView, fetchData }) => (
+            <div className="max-w-6xl mx-auto space-y-8 animate-in slide-in-from-bottom-10 duration-700">
+                <div className="flex justify-between items-end bg-white p-8 rounded-[2rem] shadow-sm">
+                    <div>
+                        <h2 className="text-3xl font-extrabold text-slate-900 tracking-tighter">เมนูแอดมิน</h2>
+                        <p className="text-slate-400 font-medium">บันทึกข้อมูลการใช้น้ำและเบิกจ่ายรายเดือน</p>
+                    </div>
+                    <button onClick={fetchData} className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-blue-700 transition-all shadow-lg"><Icon name="fa-clock-rotate-left" size={18} /> อัปเดตข้อมูล</button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <button onClick={() => setView('record_meter')} className="bg-blue-600 p-10 rounded-[2.5rem] text-white flex flex-col items-start gap-6 hover:bg-blue-700 transition-all shadow-xl relative overflow-hidden group">
+                        <div className="bg-white/20 p-4 rounded-3xl group-hover:rotate-12 transition-transform"><Icon name="fa-circle-plus" size={40} /></div>
+                        <div className="text-left"><h3 className="text-3xl font-extrabold tracking-tight">บันทึกค่าน้ำ</h3><p className="text-blue-100 font-bold opacity-80 mt-1">มิเตอร์น้ำรายเดือน</p></div>
+                        <Icon name="fa-droplet" size={180} className="absolute right-0 bottom-0 translate-x-1/4 translate-y-1/4 opacity-10" />
+                    </button>
+                    <button onClick={() => setView('record_expense')} className="bg-slate-500 p-10 rounded-[2.5rem] text-white flex flex-col items-start gap-6 hover:bg-slate-600 transition-all shadow-xl relative overflow-hidden group">
+                        <div className="bg-white/20 p-4 rounded-3xl group-hover:rotate-12 transition-transform"><Icon name="fa-wrench" size={40} /></div>
+                        <div className="text-left"><h3 className="text-3xl font-extrabold tracking-tight">บันทึกรายจ่าย</h3><p className="text-slate-200 font-bold opacity-80 mt-1">ค่าไฟและซ่อมบำรุง</p></div>
+                        <Icon name="fa-bolt" size={180} className="absolute right-0 bottom-0 translate-x-1/4 translate-y-1/4 opacity-10" />
+                    </button>
+                    <button onClick={() => setView('print_bills')} className="bg-slate-800 p-10 rounded-[2.5rem] text-white flex flex-col items-start gap-6 hover:bg-slate-900 transition-all shadow-xl relative overflow-hidden group">
+                        <div className="bg-white/20 p-4 rounded-3xl group-hover:rotate-12 transition-transform"><Icon name="fa-print" size={40} /></div>
+                        <div className="text-left"><h3 className="text-3xl font-extrabold tracking-tight">ออกบิลค่าน้ำ</h3><p className="text-slate-300 font-bold opacity-80 mt-1">พิมพ์ใบเสร็จ (PDF)</p></div>
+                        <Icon name="fa-credit-card" size={180} className="absolute right-0 bottom-0 translate-x-1/4 translate-y-1/4 opacity-10" />
+                    </button>
+                </div>
+            </div>
+        );
+
+        const PrintBillsView = ({ setView, waterBills, loggedInUser }) => {
+            const [selectedDate, setSelectedDate] = useState('');
+            const uniqueDates = useMemo(() => [...new Set(waterBills.map(b => b.date))].filter(Boolean), [waterBills]);
+            const billsToPrint = useMemo(() => waterBills.filter(b => b.date === selectedDate), [waterBills, selectedDate]);
+
+            const handlePrint = () => {
+                const content = document.getElementById('printable-area');
+                if (!content) return;
+                const printWindow = window.open('', '_blank');
+                if (printWindow) {
+                    printWindow.document.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>พิมพ์บิลค่าน้ำประปาหมู่บ้านสุขสำราญ</title>
+                            <script src="https://cdn.tailwindcss.com"><`+`/script>
+                            <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;800&display=swap" rel="stylesheet">
+                            <style>
+                            @page { size: A4 portrait; margin: 10mm; }
+                            body { font-family: 'Prompt', sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                            .print-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5mm; }
+                            .bill-card { break-inside: avoid; page-break-inside: avoid; }
+                            </style>
+                        </head>
+                        <body class="bg-white">
+                            <div class="print-grid">
+                            ${content.innerHTML}
+                            </div>
+                            <script>setTimeout(() => { window.print(); }, 1000);<`+`/script>
+                        </body>
+                        </html>
+                    `);
+                    printWindow.document.close();
+                } else {
+                    alert("ระบบถูกเบราว์เซอร์บล็อกหน้าต่าง Pop-up \n\nกรุณากดปุ่ม Ctrl + P ที่คีย์บอร์ดเพื่อสั่งพิมพ์ครับ");
+                    window.print();
+                }
+            };
+
+            return (
+                <div className="max-w-6xl mx-auto">
+                    <div className="print:hidden space-y-6 mb-10">
+                        <button onClick={() => setView('admin_dashboard')} className="flex items-center gap-2 text-slate-400 font-bold hover:text-blue-600 transition-all"><Icon name="fa-chevron-right" size={18} className="rotate-180" /> กลับสู่หน้าจัดการ</button>
+                        <div className="bg-white rounded-[3rem] shadow-2xl p-10 border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
+                            <div>
+                                <h2 className="text-4xl font-extrabold text-slate-800 tracking-tighter">พิมพ์บิลค่าน้ำประปา</h2>
+                                <p className="text-slate-500 font-medium mt-2">เลือกงวดวันที่ที่ต้องการ แล้วกดปุ่มพิมพ์</p>
+                                <p className="text-blue-500 text-sm mt-1"><Icon name="fa-circle-info" size={14}/> เคล็ดลับ: กด <b>Ctrl + P</b> เพื่อพิมพ์</p>
+                            </div>
+                            <div className="flex gap-4">
+                                <select className="px-6 py-4 bg-slate-50 rounded-2xl text-lg font-bold outline-none focus:ring-4 focus:ring-blue-100" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}>
+                                    <option value="">-- เลือกรอบบิล --</option>
+                                    {uniqueDates.map((date, idx) => <option key={idx} value={date}>งวดวันที่ {date}</option>)}
+                                </select>
+                                <button onClick={handlePrint} disabled={!selectedDate || billsToPrint.length === 0} className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:bg-blue-700 disabled:opacity-50"><Icon name="fa-print" size={20} /> พิมพ์ / PDF</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {selectedDate && billsToPrint.length > 0 && (
+                        <div id="printable-area" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 print:grid-cols-3 print:gap-4 print:w-full">
+                            {billsToPrint.map((bill, idx) => (
+                                <div key={idx} className="bill-card border border-dashed border-slate-400 p-3 bg-white rounded-xl print:rounded-[8px] text-slate-900">
+                                    <div className="text-center border-b border-slate-800 pb-2 mb-2"><h3 className="font-extrabold text-[12px] tracking-tight">ใบเสร็จรับเงินค่าน้ำประปา</h3><p className="text-[9px] font-bold text-slate-600 mt-0.5">วันที่ทำรายการ: {bill.date}</p></div>
+                                    <div className="space-y-1.5 text-[10px] font-medium">
+                                        <div className="flex justify-between bg-slate-100 px-2 py-1 rounded-md"><span className="font-bold text-slate-500 uppercase text-[9px]">บ้านเลขที่</span><span className="font-extrabold text-xs">{bill.houseNo}</span></div>
+                                        <div className="flex justify-between px-1"><span className="text-slate-500">ชื่อ-สกุล:</span><span className="font-bold truncate max-w-[80px]">{bill.name}</span></div>
+                                        <div className="flex justify-between px-1"><span className="text-slate-500">มิเตอร์:</span><span className="font-bold">{bill.prev} ➔ {bill.after}</span></div>
+                                        <div className="flex justify-between px-1"><span className="text-slate-500">ใช้น้ำ:</span><span className="font-extrabold text-blue-600">{bill.unit} หน่วย</span></div>
+                                        <div className="flex justify-between px-1"><span className="text-slate-500">เป็นเงิน:</span><span className="font-bold">{bill.waterCost.toLocaleString()} บ.</span></div>
+                                        <div className="flex justify-between px-1"><span className="text-slate-500">ค่าบำรุง:</span><span className="font-bold">{bill.maintenance.toLocaleString()} บ.</span></div>
+                                    </div>
+                                    <div className="mt-2 pt-1.5 border-t border-slate-800 flex justify-between items-end">
+                                        <div className="flex flex-col"><span className="font-black text-slate-800 uppercase text-[9px]">รวมเงินทั้งสิ้น</span><span className="text-[8px] font-bold text-slate-500 mt-0.5">({THBText(bill.total)})</span></div>
+                                        <span className="font-black text-base tracking-tighter">{bill.total.toLocaleString()} บ.</span>
+                                    </div>
+                                    <div className="mt-3 pt-1 text-center text-[10px] font-bold text-slate-800"><p>ผู้รับเงิน ................................................</p><p className="text-[9px] font-normal text-slate-600 mt-1">({loggedInUser})</p></div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const RecordMeterForm = ({ setView, users, selectedUserId, setSelectedUserId, currentMeter, setCurrentMeter, getPreviousMeterValue }) => {
+            const [isSaving, setIsSaving] = useState(false);
+            const prevMeterVal = useMemo(() => getPreviousMeterValue(selectedUserId), [selectedUserId]);
+            const units = currentMeter ? parseFloat(currentMeter) - prevMeterVal : 0;
+            const cost = units * WATER_RATE;
+            const total = cost + MAINTENANCE_FEE;
+            const today = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+            const selectedUser = users.find(u => u.id === selectedUserId);
+
+            return (
+                <div className="max-w-2xl mx-auto space-y-6 pb-20">
+                    <button onClick={() => setView('admin_dashboard')} className="flex items-center gap-2 text-slate-400 font-bold hover:text-blue-600 transition-all"><Icon name="fa-chevron-right" size={18} className="rotate-180" /> กลับสู่หน้าจัดการ</button>
+                    <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100">
+                        <div className="bg-blue-600 p-10 md:p-14 text-white relative">
+                            <h2 className="text-4xl font-extrabold tracking-tighter mb-2">บันทึกข้อมูลมิเตอร์</h2>
+                            <div className="flex items-center gap-2 bg-blue-700/50 w-fit px-4 py-1.5 rounded-full text-sm font-bold"><Icon name="fa-calendar" size={16} /> วันที่ทำรายการ: {today}</div>
+                            <Icon name="fa-droplet" size={120} className="absolute right-10 top-1/2 -translate-y-1/2 opacity-20" />
+                        </div>
+                        <div className="p-10 md:p-14 space-y-10">
+                            <div className="space-y-4"><label className="text-xs font-black text-slate-400 uppercase ml-2">เลือกครัวเรือน</label><select className="w-full p-6 bg-slate-50 rounded-[1.5rem] focus:ring-4 focus:ring-blue-100 outline-none text-xl font-bold" value={selectedUserId} onChange={(e) => { setSelectedUserId(e.target.value); setCurrentMeter(''); }}><option value="">-- กรุณาเลือก --</option>{users.map(u => <option key={u.id} value={u.id}>{u.id} : {u.name}</option>)}</select></div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-4"><label className="text-xs font-black text-slate-400 uppercase ml-2">มิเตอร์ก่อน (Auto)</label><div className="p-6 bg-slate-50 rounded-[1.5rem] text-3xl font-black text-slate-300 text-center">{prevMeterVal}</div></div>
+                                <div className="space-y-4"><label className="text-xs font-black text-slate-800 uppercase ml-2">มิเตอร์หลัง (จดใหม่)</label><input type="number" className="w-full p-6 bg-white border-4 border-blue-50 rounded-[1.5rem] focus:border-blue-500 outline-none text-3xl font-black text-blue-600 text-center" placeholder="0000" value={currentMeter} onChange={(e) => setCurrentMeter(e.target.value)} /></div>
+                            </div>
+                            {selectedUserId && (
+                                <div className="bg-slate-50 rounded-[2.5rem] p-8 space-y-6">
+                                    <h4 className="text-center text-slate-400 font-black uppercase text-xs flex justify-center gap-2"><Icon name="fa-circle-info" size={14}/> รายละเอียดการคำนวณ</h4>
+                                    <div className="space-y-4 text-slate-700">
+                                        <div className="flex justify-between text-lg"><span className="text-slate-400">บ้านเลขที่:</span><span className="font-bold">{selectedUser?.id}</span></div>
+                                        <div className="flex justify-between text-lg"><span className="text-slate-400">ชื่อ-สกุล:</span><span className="font-bold">{selectedUser?.name}</span></div>
+                                        <div className="h-px bg-slate-200" />
+                                        <div className="flex justify-between"><span className="text-slate-400 font-bold uppercase text-xs">สรุปหน่วยน้ำ:</span><span className="font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">{prevMeterVal} ➔ {currentMeter || '?'} = {units} หน่วย</span></div>
+                                        <div className="flex justify-between"><span className="text-slate-400 text-sm italic">ค่าน้ำ</span><span className="font-black">฿{cost.toLocaleString()}</span></div>
+                                        <div className="flex justify-between"><span className="text-slate-400 text-sm italic">ค่าบำรุงรักษา</span><span className="font-black">฿{MAINTENANCE_FEE}</span></div>
+                                        <div className="pt-4 border-t-2 border-dashed border-slate-200 flex justify-between items-center"><span className="text-xl font-extrabold uppercase">ยอดสุทธิ</span><span className="text-5xl font-black text-blue-700 tracking-tighter">฿{total.toLocaleString()}</span></div>
+                                    </div>
+                                </div>
+                            )}
+                            <button className="w-full bg-blue-600 text-white py-6 rounded-[2rem] font-black text-xl flex justify-center gap-4 disabled:opacity-50" disabled={!currentMeter || units < 0 || isSaving} onClick={async () => { 
+                                setIsSaving(true);
+                                try {
+                                    if (SCRIPT_URL) await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'record_meter', date: new Date().toLocaleDateString('en-GB'), houseNo: selectedUserId, name: selectedUser?.name || '', prev: prevMeterVal, after: currentMeter, unit: units, waterCost: cost, maintenance: MAINTENANCE_FEE, total: total, status: 'ค้างชำระ' }) });
+                                    alert("บันทึกเรียบร้อย"); setView('admin_dashboard');
+                                } catch (error) { alert("เกิดข้อผิดพลาด"); } finally { setIsSaving(false); }
+                            }}><Icon name="fa-floppy-disk" size={28} /> {isSaving ? "กำลังบันทึก..." : "ยืนยันบันทึกข้อมูล"}</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const RecordExpenseForm = ({ setView, metrics }) => {
+            const [isSaving, setIsSaving] = useState(false);
+            const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
+            const [electricBill, setElectricBill] = useState('');
+            const [repairBill, setRepairBill] = useState('');
+            const today = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            return (
+                <div className="max-w-2xl mx-auto space-y-6">
+                    <button onClick={() => setView('admin_dashboard')} className="flex items-center gap-2 text-slate-400 font-bold hover:text-slate-800"><Icon name="fa-chevron-right" size={18} className="rotate-180" /> ย้อนกลับ</button>
+                    <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden">
+                        <div className="bg-slate-800 p-12 text-white relative"><h2 className="text-4xl font-extrabold tracking-tighter mb-2">บันทึกเบิกจ่าย</h2><div className="flex gap-2 bg-slate-700/50 w-fit px-4 py-1.5 rounded-full text-sm font-bold"><Icon name="fa-calendar" size={16} /> วันที่: {today}</div><Icon name="fa-bolt" size={120} className="absolute right-10 top-1/2 -translate-y-1/2 opacity-20" /></div>
+                        <div className="p-10 md:p-16 space-y-10">
+                            <div className="space-y-4"><label className="text-xs font-black text-slate-500 uppercase">วันที่จ่ายเงิน</label><input type="date" className="w-full p-6 bg-slate-50 rounded-[1.5rem] font-bold text-xl" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} /></div>
+                            <div className="space-y-8">
+                                <div className="space-y-4"><label className="text-sm font-black text-yellow-600 uppercase flex gap-2"><Icon name="fa-bolt" size={18} /> ค่าไฟฟ้าหมู่บ้าน</label><input type="number" placeholder="0.00" value={electricBill} onChange={(e) => setElectricBill(e.target.value)} className="w-full p-8 bg-slate-50 rounded-[2rem] text-4xl font-black outline-none focus:ring-4 focus:ring-yellow-100" /></div>
+                                <div className="space-y-4"><label className="text-sm font-black text-blue-500 uppercase flex gap-2"><Icon name="fa-wrench" size={18} /> ค่าซ่อมบำรุง</label><input type="number" placeholder="0.00" value={repairBill} onChange={(e) => setRepairBill(e.target.value)} className="w-full p-8 bg-slate-50 rounded-[2rem] text-4xl font-black outline-none focus:ring-4 focus:ring-blue-100" /></div>
+                            </div>
+                            <div className="bg-yellow-50 p-8 rounded-[2.5rem] text-center"><p className="text-yellow-700 font-bold uppercase text-xs">ยอดคงเหลือในกองทุนปัจจุบัน</p><p className="text-4xl font-black text-slate-900">฿{metrics.latestBalance.toLocaleString()}</p></div>
+                            <button className="w-full bg-slate-900 text-white py-6 rounded-[2rem] font-black text-xl flex justify-center gap-4 disabled:opacity-50" disabled={isSaving || (!electricBill && !repairBill)} onClick={async () => { 
+                                setIsSaving(true);
+                                try {
+                                    if (SCRIPT_URL) await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'record_expense', date: expenseDate, revenue: 0, electric: parseFloat(electricBill) || 0, repair: parseFloat(repairBill) || 0, balance: metrics.latestBalance - (parseFloat(electricBill||0) + parseFloat(repairBill||0)) }) });
+                                    alert("บันทึกสำเร็จ"); setView('admin_dashboard');
+                                } catch (error) { alert("เกิดข้อผิดพลาด"); } finally { setIsSaving(false); }
+                            }}><Icon name="fa-floppy-disk" size={28} /> {isSaving ? "กำลังบันทึก..." : "ยืนยันบันทึกรายจ่าย"}</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [view, setView] = useState('resident'); 
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            const [isLoading, setIsLoading] = useState(true);
+            const [waterBills, setWaterBills] = useState([]);
+            const [expenses, setExpenses] = useState([]);
+            const [users, setUsers] = useState([]);
+            const [authData, setAuthData] = useState([]);
+            const [searchQuery, setSearchQuery] = useState('');
+            const [selectedUserId, setSelectedUserId] = useState('');
+            const [currentMeter, setCurrentMeter] = useState('');
+            const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+            const [loggedInUser, setLoggedInUser] = useState('นางศวรรยา  อุมงค์');
+
+            const parseNumber = (val) => {
+                if (!val) return 0;
+                return parseFloat(val.toString().replace(/,/g, '').trim()) || 0;
+            };
+
+            const parseCSV = (csv) => {
+                if (!csv) return [];
+                const lines = []; let currLine = []; let currCell = ''; let insideQuotes = false;
+                for (let i = 0; i < csv.length; i++) {
+                    const char = csv[i], nextChar = csv[i + 1];
+                    if (char === '"' && insideQuotes && nextChar === '"') { currCell += '"'; i++; }
+                    else if (char === '"') insideQuotes = !insideQuotes;
+                    else if (char === ',' && !insideQuotes) { currLine.push(currCell.trim()); currCell = ''; }
+                    else if ((char === '\n' || (char === '\r' && nextChar === '\n')) && !insideQuotes) {
+                        currLine.push(currCell.trim()); lines.push(currLine); currLine = []; currCell = '';
+                        if (char === '\r') i++; 
+                    } else if (char !== '\r' || insideQuotes) currCell += char;
+                }
+                currLine.push(currCell.trim());
+                if (currLine.length > 0 || currCell !== '') lines.push(currLine);
+                return lines.filter(row => row.length > 1 || (row.length === 1 && row[0] !== ''));
+            };
+
+            const fetchData = async () => {
+                setIsLoading(true);
+                try {
+                    const [waterRes, expenseRes, loginRes] = await Promise.all([ fetch(WATER_BILLS_URL), fetch(EXPENSES_URL), fetch(LOGIN_CSV_URL) ]);
+                    const [waterText, expenseText, loginText] = await Promise.all([ waterRes.text(), expenseRes.text(), loginRes.text() ]);
+
+                    const waterData = parseCSV(waterText).slice(1).filter(row => row[1] && row[1].trim() !== '').map(row => ({ date: (row[0] || '').toString().trim(), houseNo: row[1].toString().trim(), name: row[2], prev: parseNumber(row[3]), after: parseNumber(row[4]), unit: parseNumber(row[5]), waterCost: parseNumber(row[6]), maintenance: parseNumber(row[7]), total: parseNumber(row[8]), status: row[9] || 'ค้างชำระ' }));
+                    setWaterBills(waterData);
+
+                    const expenseData = parseCSV(expenseText).slice(1).filter(row => row[0] && row[0].trim() !== '').map(row => ({ date: (row[0] || '').toString().trim(), revenue: parseNumber(row[1]), electric: parseNumber(row[2]), repair: parseNumber(row[3]), balance: parseNumber(row[4]) }));
+                    setExpenses(expenseData);
+
+                    const userMap = new Map();
+                    waterData.forEach(item => { if (item.houseNo && !userMap.has(item.houseNo)) userMap.set(item.houseNo, item.name); });
+                    setUsers(Array.from(userMap.entries()).map(([id, name]) => ({ id, name })));
+                    setAuthData(parseCSV(loginText));
+                } catch (err) { console.error("Fetch Error:", err); } finally { setIsLoading(false); }
+            };
+
+            useEffect(() => { fetchData(); }, []);
+
+            const metrics = useMemo(() => {
+                const currentMonthRevenue = waterBills.reduce((s, b) => s + b.total, 0);
+                const totalElectricPaid = expenses.reduce((s, e) => s + e.electric, 0);
+                const latestBalance = expenses.length > 0 ? expenses[expenses.length - 1].balance : 0;
+                const latestElectric = expenses.length > 0 ? expenses[expenses.length - 1].electric : 0;
+                return { currentMonthRevenue, totalElectricPaid, latestBalance, latestElectric };
+            }, [waterBills, expenses]);
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                const user = e.target.username.value.trim(); const pass = e.target.password.value.trim();
+                const isValid = authData.find(row => row[0] === user && row[1] === pass);
+                if (isValid) { setIsLoggedIn(true); setLoggedInUser(isValid[2] || 'นางศวรรยา  อุมงค์'); setView('admin_dashboard'); }
+                else alert("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+            };
+
+            const getPreviousMeterValue = (houseNo) => {
+                const history = waterBills.filter(b => b.houseNo === houseNo);
+                return history.length === 0 ? 0 : history[history.length - 1].after || 0;
+            };
+
+            return (
+                <div className="min-h-screen bg-[#F5F7FA] text-slate-900 pb-20 print:bg-white print:pb-0">
+                    <nav className="bg-white/80 backdrop-blur-2xl border-b border-white sticky top-0 z-50 print:hidden">
+                        <div className="max-w-6xl mx-auto px-6 h-24 flex justify-between items-center">
+                            <div className="flex items-center gap-4 cursor-pointer" onClick={() => setView('resident')}>
+                                <div className="bg-blue-600 p-2.5 rounded-2xl shadow-xl shadow-blue-200"><Icon name="fa-droplet" size={28} className="text-white" /></div>
+                                <span className="font-extrabold text-3xl tracking-tighter uppercase italic">Water<span className="text-blue-600">Pro</span></span>
+                            </div>
+                            <div className="hidden md:flex items-center gap-6">
+                                {!isLoggedIn ? (
+                                    <button onClick={() => setView('login')} className="bg-slate-900 text-white px-8 py-3.5 rounded-2xl text-sm font-black tracking-widest hover:bg-black">LOGIN</button>
+                                ) : (
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={() => setView('admin_dashboard')} className={`px-6 py-3 rounded-2xl text-xs font-black tracking-widest ${view === 'admin_dashboard' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100'}`}>ADMIN</button>
+                                        <button onClick={() => { setIsLoggedIn(false); setView('resident'); }} className="p-3 text-red-500 hover:bg-red-50 rounded-2xl"><Icon name="fa-right-from-bracket" size={24} /></button>
+                                    </div>
+                                )}
+                            </div>
+                            <button className="md:hidden p-3 text-slate-900" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}><Icon name={isMobileMenuOpen ? "fa-xmark" : "fa-bars"} size={28} /></button>
+                        </div>
+                    </nav>
+
+                    <main className="py-8 px-6 print:py-0 print:px-0">
+                        {isLoading ? (
+                            <div className="flex flex-col items-center justify-center py-48 gap-6 print:hidden">
+                                <div className="w-16 h-16 border-8 border-slate-100 border-t-blue-600 rounded-full animate-spin"></div>
+                                <p className="font-black text-slate-300 uppercase tracking-[0.4em] text-xs">Syncing Village Cloud...</p>
+                            </div>
+                        ) : (
+                            <>
+                                {view === 'resident' && <ResidentView waterBills={waterBills} searchQuery={searchQuery} setSearchQuery={setSearchQuery} metrics={metrics} />}
+                                {view === 'login' && (
+                                    <div className="max-w-md mx-auto pt-24"><div className="bg-white rounded-[3.5rem] shadow-2xl p-12 border border-white text-center space-y-12"><div className="space-y-4"><div className="bg-slate-900 w-20 h-20 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-2xl"><Icon name="fa-lock" size={32} className="text-white" /></div><h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">เข้าสู่ระบบจัดการ</h2></div><form onSubmit={handleLogin} className="space-y-6 text-left"><input name="username" type="text" required className="w-full p-6 bg-slate-50 border-none rounded-2xl font-bold outline-none focus:ring-2 focus:ring-blue-500" placeholder="ชื่อผู้ใช้" /><input name="password" type="password" required className="w-full p-6 bg-slate-50 border-none rounded-2xl font-bold outline-none focus:ring-2 focus:ring-blue-500" placeholder="รหัสผ่าน" /><button className="w-full bg-slate-900 text-white py-6 rounded-[2.5rem] font-black text-lg shadow-2xl hover:bg-black uppercase tracking-widest">Sign In</button></form></div></div>
+                                )}
+                                {isLoggedIn && (
+                                    <>
+                                        {view === 'admin_dashboard' && <AdminDashboard setView={setView} fetchData={fetchData} />}
+                                        {view === 'print_bills' && <PrintBillsView setView={setView} waterBills={waterBills} loggedInUser={loggedInUser} />}
+                                        {view === 'record_meter' && <RecordMeterForm setView={setView} users={users} selectedUserId={selectedUserId} setSelectedUserId={setSelectedUserId} currentMeter={currentMeter} setCurrentMeter={setCurrentMeter} getPreviousMeterValue={getPreviousMeterValue} />}
+                                        {view === 'record_expense' && <RecordExpenseForm setView={setView} metrics={metrics} />}
+                                    </>
+                                )}
+                            </>
+                        )}
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
