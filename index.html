@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบประปาหมู่บ้านสุขสำราญ</title>
+    <title>ระบบประปาหมู่บ้านสุขสำราญ - วารีสมาร์ท</title>
 
     <!-- Tailwind CSS (ดึงจากออนไลน์) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Google Fonts: Prompt -->
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- React & ReactDOM (ดึงจากออนไลน์) -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -22,7 +22,34 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
-        body { font-family: 'Prompt', sans-serif; }
+        body { 
+            font-family: 'Prompt', sans-serif; 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background-color: #F2F2F7; /* iOS System Background */
+        }
+        /* iOS Style Glassmorphism & Shadow */
+        .ios-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .ios-card:active {
+            transform: scale(0.97);
+        }
+        .ios-icon-container {
+            display: flex;
+            align-items: center;
+            justify-center;
+            border-radius: 1.2rem;
+            width: 3.5rem;
+            height: 3.5rem;
+            margin-bottom: 0.75rem;
+        }
     </style>
 </head>
 <body>
@@ -37,6 +64,8 @@
         const WATER_BILLS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ21tIMjRNKBcuSDz12h3fNE4aL1NP2Piz4RgtutVDNfUGZiS8jGc4j4IqmS1-YW4WPX9IUj22eUgeM/pub?gid=0&single=true&output=csv";
         const EXPENSES_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ21tIMjRNKBcuSDz12h3fNE4aL1NP2Piz4RgtutVDNfUGZiS8jGc4j4IqmS1-YW4WPX9IUj22eUgeM/pub?gid=677756315&single=true&output=csv";
         const LOGIN_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSwOa_3_Qp02ewIlHy1XbeMftubIkCbXFvX0NGU0fjboYRq-XLlDblcTBXI4f1ur9ZQ01nTigHYE7QJ/pub?output=csv";
+        
+        const USERS_CSV_URL = ""; // ใส่ลิงก์ทะเบียนผู้ใช้น้ำถ้ามี
 
         const WATER_RATE = 8;
         const MAINTENANCE_FEE = 15;
@@ -47,7 +76,7 @@
             <i className={`fa-solid ${name} ${className}`} style={size ? { fontSize: size } : {}}></i>
         );
 
-        // เพิ่มฟังก์ชันสำหรับแปลงตัวเลขเป็นตัวอักษรไทย
+        // ฟังก์ชันสำหรับแปลงตัวเลขเป็นตัวอักษรไทย
         const THBText = (number) => {
             const numberText = ["ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า", "สิบ"];
             const nameText = ["", "สิบ", "ร้อย", "พัน", "หมื่น", "แสน", "ล้าน"];
@@ -78,28 +107,56 @@
             return bahtText;
         };
 
-        // --- ดีไซน์ใหม่ สไตล์ Modern Blue-Gray-Yellow ---
+        // --- iOS Style Cards ---
         const TransparencyCards = ({ metrics }) => (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-                <div className="bg-white p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 hover:-translate-y-1 transition-transform">
-                    <div className="bg-blue-50 text-blue-600 w-10 h-10 sm:w-14 sm:h-14 flex justify-center items-center rounded-xl sm:rounded-2xl mb-3"><Icon name="fa-droplet" size={20} className="sm:text-[24px]"/></div>
-                    <p className="text-slate-500 text-[10px] sm:text-sm font-semibold mb-1">ค่าน้ำที่เก็บได้</p>
-                    <p className="text-lg sm:text-3xl font-extrabold text-slate-800 tracking-tight truncate">{metrics.currentMonthRevenue.toLocaleString()} <span className="text-[10px] sm:text-base font-semibold text-slate-500">บาท</span></p>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                {/* ค่าน้ำที่เก็บได้ */}
+                <div className="ios-card p-6 flex flex-col items-center justify-center text-center">
+                    <div className="ios-icon-container bg-blue-500 text-white shadow-lg shadow-blue-500/20 flex items-center justify-center">
+                        <Icon name="fa-faucet-drip" className="text-xl sm:text-2xl" />
+                    </div>
+                    <p className="text-slate-500 text-[11px] md:text-sm font-bold uppercase tracking-widest mb-1.5">ค่าน้ำที่เก็บได้</p>
+                    <div className="flex flex-col items-center">
+                        <span className="text-2xl md:text-4xl font-extrabold text-slate-950 tracking-tighter">{metrics.currentMonthRevenue.toLocaleString()}</span>
+                        <span className="text-[11px] md:text-base font-bold text-slate-400 uppercase">บาท</span>
+                    </div>
                 </div>
-                <div className="bg-white p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 hover:-translate-y-1 transition-transform">
-                    <div className="bg-orange-50 text-orange-500 w-10 h-10 sm:w-14 sm:h-14 flex justify-center items-center rounded-xl sm:rounded-2xl mb-3"><Icon name="fa-bolt" size={20} className="sm:text-[24px]"/></div>
-                    <p className="text-slate-500 text-[10px] sm:text-sm font-semibold mb-1">จ่ายค่าไฟสะสม</p>
-                    <p className="text-lg sm:text-3xl font-extrabold text-slate-800 tracking-tight truncate">{metrics.totalElectricPaid.toLocaleString()} <span className="text-[10px] sm:text-base font-semibold text-slate-500">บาท</span></p>
+
+                {/* จ่ายค่าไฟสะสม */}
+                <div className="ios-card p-6 flex flex-col items-center justify-center text-center">
+                    <div className="ios-icon-container bg-orange-500 text-white shadow-lg shadow-orange-500/20 flex items-center justify-center">
+                        <Icon name="fa-bolt-lightning" className="text-xl sm:text-2xl" />
+                    </div>
+                    <p className="text-slate-500 text-[11px] md:text-sm font-bold uppercase tracking-widest mb-1.5">จ่ายค่าไฟสะสม</p>
+                    <div className="flex flex-col items-center">
+                        <span className="text-2xl md:text-4xl font-extrabold text-slate-950 tracking-tighter">{metrics.totalElectricPaid.toLocaleString()}</span>
+                        <span className="text-[11px] md:text-base font-bold text-slate-400 uppercase">บาท</span>
+                    </div>
                 </div>
-                <div className="bg-white p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 hover:-translate-y-1 transition-transform">
-                    <div className="bg-yellow-50 text-yellow-600 w-10 h-10 sm:w-14 sm:h-14 flex justify-center items-center rounded-xl sm:rounded-2xl mb-3"><Icon name="fa-calendar" size={20} className="sm:text-[24px]"/></div>
-                    <p className="text-slate-500 text-[10px] sm:text-sm font-semibold mb-1">ค่าไฟงวดล่าสุด</p>
-                    <p className="text-lg sm:text-3xl font-extrabold text-slate-800 tracking-tight truncate">{metrics.latestElectric.toLocaleString()} <span className="text-[10px] sm:text-base font-semibold text-slate-500">บาท</span></p>
+
+                {/* ค่าไฟงวดล่าสุด */}
+                <div className="ios-card p-6 flex flex-col items-center justify-center text-center">
+                    <div className="ios-icon-container bg-yellow-400 text-white shadow-lg shadow-yellow-400/20 flex items-center justify-center">
+                        <Icon name="fa-lightbulb" className="text-xl sm:text-2xl" />
+                    </div>
+                    <p className="text-slate-500 text-[11px] md:text-sm font-bold uppercase tracking-widest mb-1.5">ค่าไฟงวดล่าสุด</p>
+                    <div className="flex flex-col items-center">
+                        <span className="text-2xl md:text-4xl font-extrabold text-slate-950 tracking-tighter">{metrics.latestElectric.toLocaleString()}</span>
+                        <span className="text-[11px] md:text-base font-bold text-slate-400 uppercase">บาท</span>
+                    </div>
                 </div>
-                <div className="bg-gradient-to-br from-blue-600 to-indigo-800 p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] shadow-xl shadow-blue-900/30 hover:-translate-y-1 transition-transform text-white">
-                    <div className="bg-white/20 text-white w-10 h-10 sm:w-14 sm:h-14 flex justify-center items-center rounded-xl sm:rounded-2xl mb-3"><Icon name="fa-wallet" size={20} className="sm:text-[24px]"/></div>
-                    <p className="text-blue-100 text-[10px] sm:text-sm font-semibold mb-1">เงินคงเหลือกองทุน</p>
-                    <p className="text-lg sm:text-3xl font-extrabold text-white tracking-tight truncate">{metrics.latestBalance.toLocaleString()} <span className="text-[10px] sm:text-base font-semibold text-blue-200">บาท</span></p>
+
+                {/* เงินคงเหลือสะสม (The Hero Card) */}
+                <div className="p-6 rounded-[2.5rem] bg-slate-950 text-white flex flex-col items-center justify-center text-center relative overflow-hidden shadow-2xl transition-all hover:scale-[1.03]">
+                    <div className="ios-icon-container bg-white text-slate-950 z-10 flex items-center justify-center shadow-md">
+                        <Icon name="fa-sack-dollar" className="text-xl sm:text-2xl" />
+                    </div>
+                    <p className="text-blue-200 text-[11px] md:text-sm font-bold uppercase tracking-widest mb-1.5 z-10">เงินคงเหลือสะสม</p>
+                    <div className="flex flex-col items-center z-10">
+                        <span className="text-2xl md:text-4xl font-extrabold text-white tracking-tighter">{metrics.latestBalance.toLocaleString()}</span>
+                        <span className="text-[11px] md:text-base font-bold text-blue-300 uppercase">บาท</span>
+                    </div>
+                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-600/20 rounded-full blur-3xl"></div>
                 </div>
             </div>
         );
@@ -118,83 +175,88 @@
             }, [waterBills, searchQuery, selectedDate]);
 
             return (
-                <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700">
-                    <div className="text-center py-6 md:py-10 space-y-3">
-                        <div className="flex justify-center mb-4"><div className="p-4 bg-blue-100 shadow-inner rounded-full"><Icon name="fa-droplet" size={36} className="text-blue-600" /></div></div>
-                        <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">ประปาบ้านสุขสำราญ</h1>
-                        <p className="text-slate-500 text-base md:text-lg font-medium px-4">โปร่งใส ตรวจสอบได้ เพื่อความเป็นธรรมของชุมชน</p>
+                <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in duration-700">
+                    <div className="text-center py-6 md:py-10 space-y-4">
+                        <div className="flex justify-center mb-4">
+                            <div className="ios-card p-5 shadow-sm inline-flex items-center justify-center">
+                                <Icon name="fa-droplet" className="text-blue-600 text-4xl md:text-5xl" />
+                            </div>
+                        </div>
+                        <h1 className="text-4xl md:text-6xl font-extrabold text-slate-950 tracking-tighter leading-tight">ประปาบ้านสุขสำราญ</h1>
+                        <p className="text-slate-600 text-base md:text-xl font-semibold px-4 opacity-80">โปร่งใส ตรวจสอบได้ เพื่อความเป็นธรรมของชุมชน</p>
                         
-                        {/* ป้ายเข้าสู่ระบบ ถูกย้ายมาวางตรงนี้ตรงกลาง */}
-                        {!isLoggedIn ? (
-                            <div className="flex justify-center pt-3">
-                                <button onClick={() => setView('login')} className="bg-slate-900 text-white px-8 py-3 rounded-full text-sm font-bold shadow-lg hover:bg-slate-800 transition-all flex items-center gap-2">
-                                    <Icon name="fa-lock" size={16} /> เข้าสู่ระบบ
+                        <div className="flex justify-center pt-4">
+                            {!isLoggedIn ? (
+                                <button onClick={() => setView('login')} className="bg-white text-slate-950 px-10 py-3.5 rounded-full text-base font-bold shadow-sm border border-slate-200 hover:bg-slate-50 transition-all flex items-center gap-3">
+                                    <Icon name="fa-lock" /> เข้าสู่ระบบจัดการ
                                 </button>
-                            </div>
-                        ) : (
-                            <div className="flex justify-center pt-3">
-                                <button onClick={() => setView('admin_dashboard')} className="bg-blue-600 text-white px-8 py-3 rounded-full text-sm font-bold shadow-lg hover:bg-blue-700 transition-all flex items-center gap-2">
-                                    <Icon name="fa-user-gear" size={16} /> ไปหน้าจัดการ
+                            ) : (
+                                <button onClick={() => setView('admin_dashboard')} className="bg-slate-950 text-white px-10 py-3.5 rounded-full text-base font-bold shadow-xl hover:bg-black transition-all flex items-center gap-3">
+                                    <Icon name="fa-user-gear" /> ไปที่หน้าจัดการ
                                 </button>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
-                    <div className="space-y-4 md:space-y-6">
-                        <h2 className="text-lg md:text-xl font-bold text-slate-700 flex items-center gap-2 px-2 uppercase tracking-widest"><Icon name="fa-chart-simple" size={20} className="text-blue-500" /> Financial Dashboard</h2>
+
+                    <div className="space-y-6 md:space-y-8">
+                        <h2 className="text-xl md:text-2xl font-black text-slate-950 flex items-center justify-center md:justify-start gap-3 px-2 uppercase tracking-widest">
+                            <Icon name="fa-chart-line" className="text-blue-600" /> สรุปข้อมูลกองทุน
+                        </h2>
                         <TransparencyCards metrics={metrics} />
                     </div>
-                    <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-12 border border-slate-100 shadow-xl space-y-8">
-                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800">ค้นหาประวัติการใช้น้ำ</h2>
+
+                    <div className="bg-white rounded-[3rem] p-6 md:p-14 border border-slate-200/50 shadow-2xl space-y-12">
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 text-center lg:text-left">
+                            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-950 tracking-tighter">ค้นหาประวัติการใช้น้ำ</h2>
                             <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-                                <select className="px-6 py-4 md:py-5 bg-slate-50 border-none rounded-[1.5rem] text-base md:text-lg font-medium outline-none focus:ring-4 focus:ring-blue-100 transition-all shadow-inner text-slate-600 cursor-pointer" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}>
+                                <select className="px-6 py-4 md:py-5 bg-slate-100 border-none rounded-[1.5rem] text-lg font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all text-slate-900 cursor-pointer" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}>
                                     <option value="">-- ทุกรอบบิล --</option>
                                     {uniqueDates.map((date, idx) => <option key={idx} value={date}>รอบวันที่ {date}</option>)}
                                 </select>
-                                <div className="relative w-full sm:w-[350px]">
-                                    <Icon name="fa-magnifying-glass" size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                    <input type="text" placeholder="ค้นหาบ้านเลขที่ หรือ ชื่อ-สกุล..." className="w-full pl-12 md:pl-14 pr-6 py-4 md:py-5 bg-slate-50 border-none rounded-[1.5rem] text-base md:text-xl font-medium outline-none focus:ring-4 focus:ring-blue-100 transition-all shadow-inner placeholder-slate-400" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                                <div className="relative w-full sm:w-[400px]">
+                                    <Icon name="fa-magnifying-glass" className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 text-xl" />
+                                    <input type="text" placeholder="พิมพ์บ้านเลขที่ หรือ ชื่อ..." className="w-full pl-16 pr-6 py-4 md:py-5 bg-slate-100 border-none rounded-[1.5rem] text-xl font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all placeholder-slate-400 text-slate-950" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                                 </div>
                             </div>
                         </div>
 
                         {searchQuery ? (
                             filteredBills.length > 0 ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     {filteredBills.map((bill, idx) => (
-                                        <div key={idx} className="bg-slate-50 rounded-[2rem] p-6 md:p-8 border border-slate-100 flex flex-col gap-6 shadow-md hover:shadow-lg transition-all group">
+                                        <div key={idx} className="ios-card p-8 md:p-10 flex flex-col gap-8">
                                             <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                                                 <div className="space-y-2">
-                                                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${bill.status === 'ชำระแล้ว' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{bill.status}</span>
-                                                    <h3 className="text-xl md:text-2xl font-extrabold text-slate-800 tracking-tight">บ้านเลขที่ {bill.houseNo}</h3>
-                                                    <p className="text-slate-500 font-medium text-sm md:text-base">{bill.name}</p>
-                                                    <p className="text-xs font-bold text-blue-500 pt-1">รอบบิล: {bill.date}</p>
+                                                    <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase ${bill.status === 'ชำระแล้ว' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{bill.status}</span>
+                                                    <h3 className="text-2xl md:text-3xl font-extrabold text-slate-950 tracking-tighter">บ้านเลขที่ {bill.houseNo}</h3>
+                                                    <p className="text-slate-700 font-bold text-lg">{bill.name}</p>
+                                                    <p className="text-sm font-black text-blue-600 pt-1 tracking-widest">รอบบิล: {bill.date}</p>
                                                 </div>
-                                                <div className="text-left sm:text-right">
-                                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">ยอดชำระสุทธิ</p>
-                                                    <p className="text-3xl md:text-4xl font-extrabold text-blue-600">{bill.total.toLocaleString()} <span className="text-base md:text-xl font-semibold text-blue-400">บาท</span></p>
+                                                <div className="text-left sm:text-right border-t sm:border-t-0 pt-4 sm:pt-0 w-full sm:w-auto">
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest">ยอดชำระสุทธิ</p>
+                                                    <p className="text-4xl md:text-5xl font-extrabold text-slate-950 tracking-tighter">{bill.total.toLocaleString()} <span className="text-xl font-bold text-slate-400">บาท</span></p>
                                                 </div>
                                             </div>
-                                            <div className="h-px bg-slate-200 w-full" />
-                                            <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-xs md:text-sm">
-                                                <div className="space-y-1"><p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">เลขมิเตอร์</p><p className="font-extrabold text-slate-700 bg-white px-3 py-1.5 rounded-xl border border-slate-100 inline-block">{bill.prev} ➔ {bill.after}</p></div>
-                                                <div className="space-y-1"><p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">ใช้น้ำไป</p><p className="font-extrabold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100 inline-block">{bill.unit} หน่วย</p></div>
-                                                <div className="space-y-1"><p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">ค่าน้ำ (8 บาท/หน่วย)</p><p className="font-extrabold text-slate-700">{bill.waterCost.toLocaleString()} บาท</p></div>
-                                                <div className="space-y-1"><p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">ค่าบำรุงรักษา</p><p className="font-extrabold text-slate-700">{bill.maintenance.toLocaleString()} บาท</p></div>
+                                            <div className="h-px bg-slate-200/60 w-full" />
+                                            <div className="grid grid-cols-2 gap-y-6 gap-x-4 text-sm md:text-base">
+                                                <div className="space-y-1.5 font-bold"><p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">เลขมิเตอร์</p><p className="text-slate-950 bg-white px-4 py-2 rounded-2xl border border-slate-100 inline-block shadow-sm">{bill.prev} ➔ {bill.after}</p></div>
+                                                <div className="space-y-1.5 font-bold"><p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">ปริมาณการใช้</p><p className="text-blue-700 bg-blue-50 px-4 py-2 rounded-2xl border border-blue-100 inline-block shadow-sm">{bill.unit} หน่วย</p></div>
+                                                <div className="space-y-1.5 font-bold"><p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">ค่าน้ำประปา</p><p className="text-slate-950">{bill.waterCost.toLocaleString()} บาท</p></div>
+                                                <div className="space-y-1.5 font-bold"><p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">ค่าบำรุงส่วนกลาง</p><p className="text-slate-950">{bill.maintenance.toLocaleString()} บาท</p></div>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <div className="py-12 text-center space-y-4">
-                                    <div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto text-slate-300"><Icon name="fa-magnifying-glass" size={32} /></div>
-                                    <p className="text-slate-400 font-medium text-base md:text-lg">ไม่พบข้อมูลการใช้น้ำจากคำค้นหาหรือรอบบิลนี้</p>
+                                <div className="py-20 text-center space-y-4">
+                                    <div className="bg-slate-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto text-slate-400"><Icon name="fa-magnifying-glass" className="text-4xl" /></div>
+                                    <p className="text-slate-600 font-black text-xl">ไม่พบข้อมูลในรอบบิลนี้</p>
                                 </div>
                             )
                         ) : (
-                            <div className="py-12 text-center space-y-4">
-                                <div className="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto text-blue-300"><Icon name="fa-users" size={32} /></div>
-                                <p className="text-slate-400 font-medium text-base md:text-lg">กรุณากรอกบ้านเลขที่ หรือ ชื่อ เพื่อดูรายละเอียดค่าน้ำ</p>
+                            <div className="py-20 text-center space-y-6">
+                                <div className="bg-blue-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto text-blue-200"><Icon name="fa-search" className="text-4xl" /></div>
+                                <p className="text-slate-500 font-black text-xl">ระบุบ้านเลขที่ด้านบนเพื่อตรวจสอบข้อมูล</p>
                             </div>
                         )}
                     </div>
@@ -203,26 +265,26 @@
         };
 
         const AdminDashboard = ({ setView, fetchData }) => (
-            <div className="max-w-6xl mx-auto space-y-8 animate-in slide-in-from-bottom-10 duration-700">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-end bg-white p-6 md:p-8 rounded-[2rem] shadow-md gap-4">
-                    <div>
-                        <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tighter">เมนูแอดมิน</h2>
-                        <p className="text-slate-500 font-medium mt-1">บันทึกข้อมูลการใช้น้ำและเบิกจ่ายรายเดือน</p>
+            <div className="max-w-6xl mx-auto space-y-10 animate-in slide-in-from-bottom-10 duration-700">
+                <div className="ios-card p-8 md:p-12 flex flex-col md:flex-row justify-between items-center gap-8">
+                    <div className="text-center md:text-left">
+                        <h2 className="text-4xl md:text-5xl font-extrabold text-slate-950 tracking-tighter">แผงควบคุมแอดมิน</h2>
+                        <p className="text-slate-600 font-bold text-lg md:text-xl mt-2">จดมิเตอร์และบันทึกค่าใช้จ่ายรายเดือน</p>
                     </div>
-                    <button onClick={fetchData} className="w-full md:w-auto bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg"><Icon name="fa-clock-rotate-left" size={18} /> อัปเดตข้อมูล</button>
+                    <button onClick={fetchData} className="w-full md:w-auto bg-slate-950 text-white px-8 py-4 rounded-2xl font-black text-base flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl active:scale-95"><Icon name="fa-sync-alt" /> รีเฟรชข้อมูล</button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <button onClick={() => setView('record_meter')} className="bg-white border border-slate-100 p-8 md:p-10 rounded-[2.5rem] text-slate-800 flex flex-col items-start gap-6 hover:shadow-2xl hover:-translate-y-1 transition-all shadow-md relative overflow-hidden group">
-                        <div className="bg-blue-50 text-blue-600 p-4 rounded-3xl group-hover:scale-110 transition-transform"><Icon name="fa-circle-plus" size={36} /></div>
-                        <div className="text-left"><h3 className="text-2xl font-extrabold tracking-tight">บันทึกค่าน้ำ</h3><p className="text-slate-400 font-semibold mt-1">มิเตอร์น้ำรายเดือน</p></div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <button onClick={() => setView('record_meter')} className="ios-card p-10 md:p-14 flex flex-col items-center text-center gap-8 group">
+                        <div className="bg-blue-600 text-white p-8 rounded-3xl group-hover:scale-110 transition-transform shadow-xl shadow-blue-500/20"><Icon name="fa-circle-plus" className="text-5xl" /></div>
+                        <div className="space-y-2"><h3 className="text-3xl font-extrabold tracking-tighter uppercase">บันทึกค่าน้ำ</h3><p className="text-slate-500 font-bold">จดมิเตอร์ลูกบ้าน</p></div>
                     </button>
-                    <button onClick={() => setView('record_expense')} className="bg-white border border-slate-100 p-8 md:p-10 rounded-[2.5rem] text-slate-800 flex flex-col items-start gap-6 hover:shadow-2xl hover:-translate-y-1 transition-all shadow-md relative overflow-hidden group">
-                        <div className="bg-orange-50 text-orange-500 p-4 rounded-3xl group-hover:scale-110 transition-transform"><Icon name="fa-wrench" size={36} /></div>
-                        <div className="text-left"><h3 className="text-2xl font-extrabold tracking-tight">บันทึกรายจ่าย</h3><p className="text-slate-400 font-semibold mt-1">ค่าไฟและซ่อมบำรุง</p></div>
+                    <button onClick={() => setView('record_expense')} className="ios-card p-10 md:p-14 flex flex-col items-center text-center gap-8 group">
+                        <div className="bg-orange-500 text-white p-8 rounded-3xl group-hover:scale-110 transition-transform shadow-xl shadow-orange-500/20"><Icon name="fa-file-invoice-dollar" className="text-5xl" /></div>
+                        <div className="space-y-2"><h3 className="text-3xl font-extrabold tracking-tighter uppercase">บันทึกรายจ่าย</h3><p className="text-slate-500 font-bold">ค่าไฟฟ้าและซ่อมบำรุง</p></div>
                     </button>
-                    <button onClick={() => setView('print_bills')} className="bg-white border border-slate-100 p-8 md:p-10 rounded-[2.5rem] text-slate-800 flex flex-col items-start gap-6 hover:shadow-2xl hover:-translate-y-1 transition-all shadow-md relative overflow-hidden group">
-                        <div className="bg-indigo-50 text-indigo-600 p-4 rounded-3xl group-hover:scale-110 transition-transform"><Icon name="fa-print" size={36} /></div>
-                        <div className="text-left"><h3 className="text-2xl font-extrabold tracking-tight">ออกบิลค่าน้ำ</h3><p className="text-slate-400 font-semibold mt-1">พิมพ์ใบเสร็จ (PDF)</p></div>
+                    <button onClick={() => setView('print_bills')} className="ios-card p-10 md:p-14 flex flex-col items-center text-center gap-8 group">
+                        <div className="bg-slate-950 text-white p-8 rounded-3xl group-hover:scale-110 transition-transform shadow-xl"><Icon name="fa-print" className="text-5xl" /></div>
+                        <div className="space-y-2"><h3 className="text-3xl font-extrabold tracking-tighter uppercase">ออกบิล PDF</h3><p className="text-slate-500 font-bold">พิมพ์ใบเสร็จค่าน้ำ</p></div>
                     </button>
                 </div>
             </div>
@@ -253,36 +315,33 @@
                             </style>
                         </head>
                         <body class="bg-white">
-                            <div class="print-grid">
-                            ${content.innerHTML}
-                            </div>
+                            <div class="print-grid">${content.innerHTML}</div>
                             <script>setTimeout(() => { window.print(); }, 1000);<`+`/script>
                         </body>
                         </html>
                     `);
                     printWindow.document.close();
                 } else {
-                    alert("ระบบถูกเบราว์เซอร์บล็อกหน้าต่าง Pop-up \n\nกรุณากดปุ่ม Ctrl + P ที่คีย์บอร์ดเพื่อสั่งพิมพ์ครับ");
+                    alert("กรุณาใช้ Ctrl + P เพื่อสั่งพิมพ์ครับ");
                     window.print();
                 }
             };
 
             return (
-                <div className="max-w-6xl mx-auto">
-                    <div className="print:hidden space-y-6 mb-10">
-                        <button onClick={() => setView('admin_dashboard')} className="flex items-center gap-2 text-slate-400 font-bold hover:text-blue-600 transition-all"><Icon name="fa-chevron-right" size={18} className="rotate-180" /> กลับสู่หน้าจัดการ</button>
-                        <div className="bg-white rounded-[3rem] shadow-2xl p-6 md:p-10 border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div className="max-w-6xl mx-auto font-['Prompt']">
+                    <div className="print:hidden space-y-6 mb-12">
+                        <button onClick={() => setView('admin_dashboard')} className="flex items-center gap-2 text-slate-500 font-black hover:text-blue-600 transition-all uppercase tracking-widest"><Icon name="fa-chevron-left" /> กลับหน้าเมนู</button>
+                        <div className="bg-white rounded-[3rem] shadow-2xl p-8 md:p-12 border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-8">
                             <div className="text-center md:text-left">
-                                <h2 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tighter">พิมพ์บิลค่าน้ำประปา</h2>
-                                <p className="text-slate-500 font-medium mt-2">เลือกงวดวันที่ที่ต้องการ แล้วกดปุ่มพิมพ์</p>
-                                <p className="text-blue-500 text-sm mt-1"><Icon name="fa-circle-info" size={14}/> เคล็ดลับ: กด <b>Ctrl + P</b> เพื่อพิมพ์</p>
+                                <h2 className="text-4xl font-extrabold text-slate-950 tracking-tighter">พิมพ์บิลรายเดือน</h2>
+                                <p className="text-slate-600 font-bold mt-2 text-lg italic opacity-80">เลือกงวดบิลเพื่อพิมพ์ลงกระดาษ A4 (3 คอลัมน์)</p>
                             </div>
                             <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-                                <select className="px-6 py-4 bg-slate-50 rounded-2xl text-base md:text-lg font-bold outline-none focus:ring-4 focus:ring-blue-100 w-full sm:w-auto" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}>
+                                <select className="px-8 py-4 bg-slate-100 border-none rounded-2xl text-xl font-bold outline-none focus:ring-4 focus:ring-blue-100 w-full sm:w-auto" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}>
                                     <option value="">-- เลือกรอบบิล --</option>
                                     {uniqueDates.map((date, idx) => <option key={idx} value={date}>งวดวันที่ {date}</option>)}
                                 </select>
-                                <button onClick={handlePrint} disabled={!selectedDate || billsToPrint.length === 0} className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-blue-700 disabled:opacity-50 w-full sm:w-auto"><Icon name="fa-print" size={20} /> พิมพ์ / PDF</button>
+                                <button onClick={handlePrint} disabled={!selectedDate || billsToPrint.length === 0} className="bg-blue-600 text-white px-10 py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:bg-blue-700 disabled:opacity-30 w-full sm:w-auto shadow-xl"><Icon name="fa-print" /> พิมพ์บิลตอนนี้</button>
                             </div>
                         </div>
                     </div>
@@ -290,21 +349,21 @@
                     {selectedDate && billsToPrint.length > 0 && (
                         <div id="printable-area" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 print:grid-cols-3 print:gap-4 print:w-full">
                             {billsToPrint.map((bill, idx) => (
-                                <div key={idx} className="bill-card border border-dashed border-slate-400 p-3 bg-white rounded-xl print:rounded-[8px] text-slate-900">
-                                    <div className="text-center border-b border-slate-800 pb-2 mb-2"><h3 className="font-extrabold text-[12px] tracking-tight">ใบเสร็จรับเงินค่าน้ำประปาบ้านสุขสำราญ</h3><p className="text-[9px] font-bold text-slate-600 mt-0.5">วันที่ทำรายการ: {bill.date}</p></div>
-                                    <div className="space-y-1.5 text-[10px] font-medium">
-                                        <div className="flex justify-between bg-slate-100 px-2 py-1 rounded-md"><span className="font-bold text-slate-500 uppercase text-[9px]">บ้านเลขที่</span><span className="font-extrabold text-xs">{bill.houseNo}</span></div>
-                                        <div className="flex justify-between px-1"><span className="text-slate-500">ชื่อ-สกุล:</span><span className="font-bold truncate max-w-[80px]">{bill.name}</span></div>
-                                        <div className="flex justify-between px-1"><span className="text-slate-500">มิเตอร์:</span><span className="font-bold">{bill.prev} ➔ {bill.after}</span></div>
-                                        <div className="flex justify-between px-1"><span className="text-slate-500">ใช้น้ำ:</span><span className="font-extrabold text-blue-600">{bill.unit} หน่วย</span></div>
-                                        <div className="flex justify-between px-1"><span className="text-slate-500">เป็นเงิน:</span><span className="font-bold">{bill.waterCost.toLocaleString()} บาท</span></div>
-                                        <div className="flex justify-between px-1"><span className="text-slate-500">ค่าบำรุง:</span><span className="font-bold">{bill.maintenance.toLocaleString()} บาท</span></div>
+                                <div key={idx} className="bill-card border border-dashed border-slate-400 p-4 bg-white rounded-2xl print:rounded-[10px] text-slate-950 shadow-sm print:shadow-none">
+                                    <div className="text-center border-b-2 border-slate-900 pb-3 mb-3"><h3 className="font-extrabold text-[15px] tracking-tight text-slate-950">ใบเสร็จรับเงินค่าน้ำประปา</h3><p className="text-[10px] font-black text-slate-600 mt-1 uppercase">ประจำงวดวันที่: {bill.date}</p></div>
+                                    <div className="space-y-2 text-[12px] font-bold">
+                                        <div className="flex justify-between bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200"><span className="text-slate-600 uppercase text-[9px]">บ้านเลขที่</span><span className="text-sm font-black">{bill.houseNo}</span></div>
+                                        <div className="flex justify-between px-1"><span className="text-slate-600">ชื่อผู้ใช้:</span><span className="truncate max-w-[95px] text-slate-950">{bill.name}</span></div>
+                                        <div className="flex justify-between px-1"><span className="text-slate-600">เลขมิเตอร์:</span><span className="text-slate-950">{bill.prev} ➔ {bill.after}</span></div>
+                                        <div className="flex justify-between px-1"><span className="text-slate-600">จำนวนที่ใช้:</span><span className="text-blue-700">{bill.unit} หน่วย</span></div>
+                                        <div className="flex justify-between px-1"><span className="text-slate-600">ค่าน้ำ:</span><span className="text-slate-950">{bill.waterCost.toLocaleString()} บาท</span></div>
+                                        <div className="flex justify-between px-1"><span className="text-slate-600">ค่าบำรุง:</span><span className="text-slate-950">{bill.maintenance.toLocaleString()} บาท</span></div>
                                     </div>
-                                    <div className="mt-2 pt-1.5 border-t border-slate-800 flex justify-between items-end">
-                                        <div className="flex flex-col"><span className="font-black text-slate-800 uppercase text-[9px]">รวมเงินทั้งสิ้น</span><span className="text-[8px] font-bold text-slate-500 mt-0.5">({THBText(bill.total)})</span></div>
-                                        <span className="font-black text-base tracking-tighter">{bill.total.toLocaleString()} บาท</span>
+                                    <div className="mt-3 pt-2 border-t-2 border-slate-900 flex justify-between items-end">
+                                        <div className="flex flex-col"><span className="font-black text-slate-950 uppercase text-[10px]">รวมเงินทั้งสิ้น</span><span className="text-[10px] font-bold text-slate-700 mt-0.5 tracking-tighter">({THBText(bill.total)})</span></div>
+                                        <span className="font-black text-2xl tracking-tighter text-slate-950">{bill.total.toLocaleString()} บาท</span>
                                     </div>
-                                    <div className="mt-3 pt-1 text-center text-[10px] font-bold text-slate-800"><p>ผู้รับเงิน ................................................</p><p className="text-[9px] font-normal text-slate-600 mt-1">({loggedInUser})</p></div>
+                                    <div className="mt-5 pt-2 text-center text-[11px] font-black text-slate-950"><p>ผู้รับเงิน .................................................</p><p className="text-[10px] font-bold text-slate-500 mt-2 italic">({loggedInUser})</p></div>
                                 </div>
                             ))}
                         </div>
@@ -313,51 +372,58 @@
             );
         };
 
-        const RecordMeterForm = ({ setView, users, selectedUserId, setSelectedUserId, currentMeter, setCurrentMeter, getPreviousMeterValue }) => {
+        const RecordMeterForm = ({ setView, users, registeredUsers, getPreviousMeterValue }) => {
+            const [inputHouseNo, setInputHouseNo] = useState('');
+            const [inputName, setInputName] = useState('');
+            const [currentMeter, setCurrentMeter] = useState('');
             const [isSaving, setIsSaving] = useState(false);
-            const prevMeterVal = useMemo(() => getPreviousMeterValue(selectedUserId), [selectedUserId]);
+            
+            const prevMeterVal = useMemo(() => getPreviousMeterValue(inputHouseNo), [inputHouseNo, getPreviousMeterValue]);
             const units = currentMeter ? parseFloat(currentMeter) - prevMeterVal : 0;
             const cost = units * WATER_RATE;
             const total = cost + MAINTENANCE_FEE;
-            const today = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
-            const selectedUser = users.find(u => u.id === selectedUserId);
+
+            const handleHouseNoChange = (e) => {
+                const val = e.target.value;
+                setInputHouseNo(val);
+                setCurrentMeter('');
+                const foundUser = registeredUsers.find(u => u.id === val) || users.find(u => u.id === val);
+                if (foundUser) setInputName(foundUser.name);
+                else setInputName('');
+            };
 
             return (
-                <div className="max-w-2xl mx-auto space-y-6 pb-20">
-                    <button onClick={() => setView('admin_dashboard')} className="flex items-center gap-2 text-slate-400 font-bold hover:text-blue-600 transition-all"><Icon name="fa-chevron-right" size={18} className="rotate-180" /> กลับสู่หน้าจัดการ</button>
-                    <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100">
-                        <div className="bg-blue-600 p-8 md:p-14 text-white relative">
-                            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tighter mb-2">บันทึกข้อมูลมิเตอร์</h2>
-                            <div className="flex items-center gap-2 bg-blue-700/50 w-fit px-4 py-1.5 rounded-full text-xs md:text-sm font-bold"><Icon name="fa-calendar" size={16} /> วันที่ทำรายการ: {today}</div>
-                            <Icon name="fa-droplet" size={100} className="absolute right-6 top-1/2 -translate-y-1/2 opacity-20" />
+                <div className="max-w-2xl mx-auto space-y-8 pb-20">
+                    <button onClick={() => setView('admin_dashboard')} className="flex items-center gap-2 text-slate-500 font-black hover:text-blue-600 transition-all uppercase tracking-widest"><Icon name="fa-chevron-left" /> กลับ</button>
+                    <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-slate-200/50">
+                        <div className="bg-blue-600 p-10 md:p-16 text-white relative">
+                            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tighter mb-2 italic">RECORD</h2>
+                            <p className="bg-white/20 w-fit px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-[0.2em]">บันทึกข้อมูลการใช้น้ำ</p>
+                            <Icon name="fa-faucet-drip" size={120} className="absolute right-8 top-1/2 -translate-y-1/2 opacity-20" />
                         </div>
-                        <div className="p-8 md:p-14 space-y-8 md:space-y-10">
-                            <div className="space-y-4"><label className="text-xs font-black text-slate-400 uppercase ml-2">เลือกครัวเรือน</label><select className="w-full p-5 md:p-6 bg-slate-50 rounded-[1.5rem] focus:ring-4 focus:ring-blue-100 outline-none text-lg md:text-xl font-bold" value={selectedUserId} onChange={(e) => { setSelectedUserId(e.target.value); setCurrentMeter(''); }}><option value="">-- กรุณาเลือก --</option>{users.map(u => <option key={u.id} value={u.id}>{u.id} : {u.name}</option>)}</select></div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-                                <div className="space-y-4"><label className="text-xs font-black text-slate-400 uppercase ml-2">มิเตอร์ก่อน (Auto)</label><div className="p-5 md:p-6 bg-slate-50 rounded-[1.5rem] text-2xl md:text-3xl font-black text-slate-300 text-center">{prevMeterVal}</div></div>
-                                <div className="space-y-4"><label className="text-xs font-black text-slate-800 uppercase ml-2">มิเตอร์หลัง (จดใหม่)</label><input type="number" className="w-full p-5 md:p-6 bg-white border-4 border-blue-50 rounded-[1.5rem] focus:border-blue-500 outline-none text-2xl md:text-3xl font-black text-blue-600 text-center" placeholder="0000" value={currentMeter} onChange={(e) => setCurrentMeter(e.target.value)} /></div>
+                        <div className="p-10 md:p-16 space-y-10">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-3"><label className="text-xs font-black text-slate-600 uppercase tracking-widest ml-1">บ้านเลขที่</label><input type="text" className="w-full p-6 bg-slate-100 border-none rounded-[1.5rem] focus:ring-4 focus:ring-blue-100 outline-none text-2xl font-black transition-all text-slate-950" value={inputHouseNo} onChange={handleHouseNoChange} placeholder="ระบุเลขที่บ้าน" /></div>
+                                <div className="space-y-3"><label className="text-xs font-black text-slate-600 uppercase tracking-widest ml-1">ชื่อผู้ใช้น้ำ</label><input type="text" className="w-full p-6 bg-slate-100 border-none rounded-[1.5rem] outline-none text-xl font-bold text-slate-700 cursor-not-allowed" value={inputName} readOnly placeholder="ดึงชื่ออัตโนมัติ" /></div>
                             </div>
-                            {selectedUserId && (
-                                <div className="bg-slate-50 rounded-[2rem] p-6 md:p-8 space-y-6">
-                                    <h4 className="text-center text-slate-400 font-black uppercase text-xs flex justify-center gap-2"><Icon name="fa-circle-info" size={14}/> รายละเอียดการคำนวณ</h4>
-                                    <div className="space-y-4 text-slate-700 text-sm md:text-base">
-                                        <div className="flex justify-between"><span className="text-slate-400">บ้านเลขที่:</span><span className="font-bold">{selectedUser?.id}</span></div>
-                                        <div className="flex justify-between"><span className="text-slate-400">ชื่อ-สกุล:</span><span className="font-bold">{selectedUser?.name}</span></div>
-                                        <div className="h-px bg-slate-200" />
-                                        <div className="flex justify-between"><span className="text-slate-400 font-bold uppercase text-xs">สรุปหน่วยน้ำ:</span><span className="font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">{prevMeterVal} ➔ {currentMeter || '?'} = {units} หน่วย</span></div>
-                                        <div className="flex justify-between"><span className="text-slate-400 italic">ค่าน้ำ</span><span className="font-black">{cost.toLocaleString()} บาท</span></div>
-                                        <div className="flex justify-between"><span className="text-slate-400 italic">ค่าบำรุงรักษา</span><span className="font-black">{MAINTENANCE_FEE} บาท</span></div>
-                                        <div className="pt-4 border-t-2 border-dashed border-slate-200 flex justify-between items-center"><span className="text-lg md:text-xl font-extrabold uppercase">ยอดสุทธิ</span><span className="text-3xl md:text-5xl font-black text-blue-700 tracking-tighter">{total.toLocaleString()} <span className="text-xl md:text-2xl font-bold">บาท</span></span></div>
-                                    </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-3"><label className="text-xs font-black text-slate-600 uppercase tracking-widest ml-1">มิเตอร์ก่อน (Auto)</label><div className="p-6 bg-slate-50 rounded-[1.5rem] text-3xl font-black text-slate-400 text-center border border-slate-100">{prevMeterVal}</div></div>
+                                <div className="space-y-3"><label className="text-xs font-black text-slate-950 uppercase tracking-widest ml-1">มิเตอร์จดใหม่</label><input type="number" className="w-full p-6 bg-white border-4 border-blue-100 rounded-[1.5rem] focus:border-blue-500 outline-none text-4xl font-black text-blue-700 text-center shadow-lg transition-all" placeholder="0000" value={currentMeter} onChange={(e) => setCurrentMeter(e.target.value)} /></div>
+                            </div>
+                            {inputHouseNo && inputName && (
+                                <div className="bg-slate-50 rounded-[2.5rem] p-10 space-y-6 border border-slate-200">
+                                    <div className="flex justify-between items-center"><span className="text-slate-600 font-bold uppercase text-xs tracking-widest">สรุปหน่วยน้ำ</span><span className="font-black text-blue-700 bg-blue-100/50 px-4 py-1.5 rounded-xl text-lg">{prevMeterVal} ➔ {currentMeter || '?'} = {units} หน่วย</span></div>
+                                    <div className="h-px bg-slate-300" />
+                                    <div className="flex justify-between items-center"><span className="text-xl font-black text-slate-950 uppercase tracking-tighter">ยอดสุทธิ</span><span className="text-5xl font-black text-blue-800 tracking-tighter">{total.toLocaleString()} <span className="text-2xl font-bold uppercase">บาท</span></span></div>
                                 </div>
                             )}
-                            <button className="w-full bg-blue-600 text-white py-5 md:py-6 rounded-[2rem] font-black text-lg md:text-xl flex justify-center gap-4 disabled:opacity-50" disabled={!currentMeter || units < 0 || isSaving} onClick={async () => { 
+                            <button className="w-full bg-blue-600 text-white py-6 rounded-[2rem] font-black text-xl flex justify-center items-center gap-4 hover:bg-blue-700 hover:scale-[1.01] active:scale-95 transition-all shadow-2xl disabled:opacity-30" disabled={!inputHouseNo || !currentMeter || units < 0 || isSaving} onClick={async () => { 
                                 setIsSaving(true);
                                 try {
-                                    if (SCRIPT_URL) await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'record_meter', date: new Date().toLocaleDateString('en-GB'), houseNo: selectedUserId, name: selectedUser?.name || '', prev: prevMeterVal, after: currentMeter, unit: units, waterCost: cost, maintenance: MAINTENANCE_FEE, total: total, status: 'ค้างชำระ' }) });
-                                    alert("บันทึกเรียบร้อย"); setView('admin_dashboard');
-                                } catch (error) { alert("เกิดข้อผิดพลาด"); } finally { setIsSaving(false); }
-                            }}><Icon name="fa-floppy-disk" size={24} /> {isSaving ? "กำลังบันทึก..." : "ยืนยันบันทึกข้อมูล"}</button>
+                                    await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'record_meter', date: new Date().toLocaleDateString('en-GB'), houseNo: inputHouseNo, name: inputName, prev: prevMeterVal, after: currentMeter, unit: units, waterCost: cost, maintenance: MAINTENANCE_FEE, total: total, status: 'ค้างชำระ' }) });
+                                    alert("บันทึกค่าน้ำเรียบร้อยแล้ว"); setView('admin_dashboard');
+                                } catch (error) { alert("เกิดข้อผิดพลาดในการบันทึก"); } finally { setIsSaving(false); }
+                            }}><Icon name="fa-save" size={28} /> {isSaving ? "กำลังบันทึก..." : "บันทึกข้อมูล"}</button>
                         </div>
                     </div>
                 </div>
@@ -369,27 +435,30 @@
             const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
             const [electricBill, setElectricBill] = useState('');
             const [repairBill, setRepairBill] = useState('');
-            const today = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
 
             return (
-                <div className="max-w-2xl mx-auto space-y-6 pb-20">
-                    <button onClick={() => setView('admin_dashboard')} className="flex items-center gap-2 text-slate-400 font-bold hover:text-slate-800"><Icon name="fa-chevron-right" size={18} className="rotate-180" /> ย้อนกลับ</button>
+                <div className="max-w-2xl mx-auto space-y-8 pb-20">
+                    <button onClick={() => setView('admin_dashboard')} className="flex items-center gap-2 text-slate-500 font-black hover:text-slate-800 uppercase tracking-widest"><Icon name="fa-chevron-left" /> กลับ</button>
                     <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden">
-                        <div className="bg-slate-800 p-8 md:p-12 text-white relative"><h2 className="text-3xl md:text-4xl font-extrabold tracking-tighter mb-2">บันทึกเบิกจ่าย</h2><div className="flex gap-2 bg-slate-700/50 w-fit px-4 py-1.5 rounded-full text-xs md:text-sm font-bold"><Icon name="fa-calendar" size={16} /> วันที่: {today}</div><Icon name="fa-bolt" size={100} className="absolute right-6 top-1/2 -translate-y-1/2 opacity-20" /></div>
-                        <div className="p-8 md:p-16 space-y-8 md:space-y-10">
-                            <div className="space-y-4"><label className="text-xs font-black text-slate-500 uppercase">วันที่จ่ายเงิน</label><input type="date" className="w-full p-5 md:p-6 bg-slate-50 rounded-[1.5rem] font-bold text-lg md:text-xl" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} /></div>
-                            <div className="space-y-6 md:space-y-8">
-                                <div className="space-y-4"><label className="text-sm font-black text-orange-500 uppercase flex gap-2"><Icon name="fa-bolt" size={18} /> ค่าไฟฟ้าหมู่บ้าน</label><input type="number" placeholder="0.00" value={electricBill} onChange={(e) => setElectricBill(e.target.value)} className="w-full p-6 md:p-8 bg-slate-50 rounded-[2rem] text-3xl md:text-4xl font-black outline-none focus:ring-4 focus:ring-orange-100" /></div>
-                                <div className="space-y-4"><label className="text-sm font-black text-blue-500 uppercase flex gap-2"><Icon name="fa-wrench" size={18} /> ค่าซ่อมบำรุง</label><input type="number" placeholder="0.00" value={repairBill} onChange={(e) => setRepairBill(e.target.value)} className="w-full p-6 md:p-8 bg-slate-50 rounded-[2rem] text-3xl md:text-4xl font-black outline-none focus:ring-4 focus:ring-blue-100" /></div>
+                        <div className="bg-slate-950 p-10 md:p-16 text-white relative">
+                            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tighter mb-2 italic">EXPENSE</h2>
+                            <p className="bg-white/20 w-fit px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-[0.2em]">บันทึกรายจ่าย</p>
+                            <Icon name="fa-bolt-lightning" size={120} className="absolute right-8 top-1/2 -translate-y-1/2 opacity-20" />
+                        </div>
+                        <div className="p-10 md:p-16 space-y-12">
+                            <div className="space-y-4"><label className="text-xs font-black text-slate-600 uppercase tracking-widest ml-1">วันที่ทำรายการ</label><input type="date" className="w-full p-6 bg-slate-100 border-none rounded-[1.5rem] font-bold text-xl outline-none focus:ring-4 focus:ring-blue-100 text-slate-950 shadow-inner" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} /></div>
+                            <div className="space-y-8">
+                                <div className="space-y-4"><label className="text-sm font-black text-orange-600 uppercase flex items-center gap-3 tracking-widest ml-1"><Icon name="fa-bolt-lightning" /> ค่าไฟฟ้าหมู่บ้าน</label><input type="number" placeholder="0.00" value={electricBill} onChange={(e) => setElectricBill(e.target.value)} className="w-full p-8 bg-slate-100 border-none rounded-[2rem] text-5xl font-black outline-none focus:ring-4 focus:ring-orange-100 text-slate-950 shadow-inner" /></div>
+                                <div className="space-y-4"><label className="text-sm font-black text-indigo-600 uppercase flex items-center gap-3 tracking-widest ml-1"><Icon name="fa-screwdriver-wrench" /> ค่าซ่อมบำรุง / อื่นๆ</label><input type="number" placeholder="0.00" value={repairBill} onChange={(e) => setRepairBill(e.target.value)} className="w-full p-8 bg-slate-100 border-none rounded-[2rem] text-5xl font-black outline-none focus:ring-4 focus:ring-indigo-100 text-slate-950 shadow-inner" /></div>
                             </div>
-                            <div className="bg-yellow-50 p-6 md:p-8 rounded-[2.5rem] text-center"><p className="text-yellow-700 font-bold uppercase text-xs mb-2">ยอดคงเหลือในกองทุนปัจจุบัน</p><p className="text-3xl md:text-4xl font-black text-slate-900">{metrics.latestBalance.toLocaleString()} <span className="text-xl md:text-2xl">บาท</span></p></div>
-                            <button className="w-full bg-slate-900 text-white py-5 md:py-6 rounded-[2rem] font-black text-lg md:text-xl flex justify-center gap-4 disabled:opacity-50" disabled={isSaving || (!electricBill && !repairBill)} onClick={async () => { 
+                            <div className="bg-yellow-50 p-10 rounded-[3rem] text-center border border-yellow-100"><p className="text-yellow-700 font-black uppercase text-xs tracking-[0.3em] mb-3">เงินกองทุนคงเหลือปัจจุบัน</p><p className="text-4xl md:text-5xl font-black text-slate-950 tracking-tighter">{metrics.latestBalance.toLocaleString()} <span className="text-2xl font-bold uppercase opacity-50">บาท</span></p></div>
+                            <button className="w-full bg-slate-950 text-white py-6 rounded-[2rem] font-black text-xl flex justify-center items-center gap-4 hover:bg-black transition-all shadow-2xl disabled:opacity-30" disabled={isSaving || (!electricBill && !repairBill)} onClick={async () => { 
                                 setIsSaving(true);
                                 try {
-                                    if (SCRIPT_URL) await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'record_expense', date: expenseDate, revenue: 0, electric: parseFloat(electricBill) || 0, repair: parseFloat(repairBill) || 0, balance: metrics.latestBalance - (parseFloat(electricBill||0) + parseFloat(repairBill||0)) }) });
-                                    alert("บันทึกสำเร็จ"); setView('admin_dashboard');
+                                    await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'record_expense', date: expenseDate, revenue: 0, electric: parseFloat(electricBill) || 0, repair: parseFloat(repairBill) || 0, balance: metrics.latestBalance - (parseFloat(electricBill||0) + parseFloat(repairBill||0)) }) });
+                                    alert("บันทึกรายจ่ายเรียบร้อย"); setView('admin_dashboard');
                                 } catch (error) { alert("เกิดข้อผิดพลาด"); } finally { setIsSaving(false); }
-                            }}><Icon name="fa-floppy-disk" size={24} /> {isSaving ? "กำลังบันทึก..." : "ยืนยันบันทึกรายจ่าย"}</button>
+                            }}><Icon name="fa-check-circle" size={28} /> {isSaving ? "กำลังบันทึก..." : "ยืนยันการเบิกจ่าย"}</button>
                         </div>
                     </div>
                 </div>
@@ -403,18 +472,13 @@
             const [waterBills, setWaterBills] = useState([]);
             const [expenses, setExpenses] = useState([]);
             const [users, setUsers] = useState([]);
+            const [registeredUsers, setRegisteredUsers] = useState([]);
             const [authData, setAuthData] = useState([]);
             const [searchQuery, setSearchQuery] = useState('');
-            const [selectedUserId, setSelectedUserId] = useState('');
-            const [currentMeter, setCurrentMeter] = useState('');
             const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
             const [loggedInUser, setLoggedInUser] = useState('นางศวรรยา  อุมงค์');
 
-            const parseNumber = (val) => {
-                if (!val) return 0;
-                return parseFloat(val.toString().replace(/,/g, '').trim()) || 0;
-            };
-
+            const parseNumber = (val) => val ? parseFloat(val.toString().replace(/,/g, '').trim()) || 0 : 0;
             const parseCSV = (csv) => {
                 if (!csv) return [];
                 const lines = []; let currLine = []; let currCell = ''; let insideQuotes = false;
@@ -436,94 +500,101 @@
             const fetchData = async () => {
                 setIsLoading(true);
                 try {
-                    const [waterRes, expenseRes, loginRes] = await Promise.all([ fetch(WATER_BILLS_URL), fetch(EXPENSES_URL), fetch(LOGIN_CSV_URL) ]);
-                    const [waterText, expenseText, loginText] = await Promise.all([ waterRes.text(), expenseRes.text(), loginRes.text() ]);
-
-                    const waterData = parseCSV(waterText).slice(1).filter(row => row[1] && row[1].trim() !== '').map(row => ({ date: (row[0] || '').toString().trim(), houseNo: row[1].toString().trim(), name: row[2], prev: parseNumber(row[3]), after: parseNumber(row[4]), unit: parseNumber(row[5]), waterCost: parseNumber(row[6]), maintenance: parseNumber(row[7]), total: parseNumber(row[8]), status: row[9] || 'ค้างชำระ' }));
-                    setWaterBills(waterData);
-
-                    const expenseData = parseCSV(expenseText).slice(1).filter(row => row[0] && row[0].trim() !== '').map(row => ({ date: (row[0] || '').toString().trim(), revenue: parseNumber(row[1]), electric: parseNumber(row[2]), repair: parseNumber(row[3]), balance: parseNumber(row[4]) }));
-                    setExpenses(expenseData);
-
-                    const userMap = new Map();
-                    waterData.forEach(item => { if (item.houseNo && !userMap.has(item.houseNo)) userMap.set(item.houseNo, item.name); });
+                    const fetches = [fetch(WATER_BILLS_URL), fetch(EXPENSES_URL), fetch(LOGIN_CSV_URL)];
+                    if (USERS_CSV_URL) fetches.push(fetch(USERS_CSV_URL));
+                    const res = await Promise.all(fetches);
+                    const texts = await Promise.all(res.map(r => r.text()));
+                    
+                    const waterData = parseCSV(texts[0]).slice(1).filter(row => row[1] && row[1].trim() !== '').map(row => ({ date: (row[0] || '').toString().trim(), houseNo: row[1].toString().trim(), name: row[2], prev: parseNumber(row[3]), after: parseNumber(row[4]), unit: parseNumber(row[5]), waterCost: parseNumber(row[6]), maintenance: parseNumber(row[7]), total: parseNumber(row[8]), status: row[9] || 'ค้างชำระ' }));
+                    const expenseData = parseCSV(texts[1]).slice(1).filter(row => row[0] && row[0].trim() !== '').map(row => ({ date: (row[0] || '').toString().trim(), revenue: parseNumber(row[1]), electric: parseNumber(row[2]), repair: parseNumber(row[3]), balance: parseNumber(row[4]) }));
+                    
+                    setWaterBills(waterData); setExpenses(expenseData); setAuthData(parseCSV(texts[2]));
+                    const userMap = new Map(); waterData.forEach(item => { if (item.houseNo && !userMap.has(item.houseNo)) userMap.set(item.houseNo, item.name); });
                     setUsers(Array.from(userMap.entries()).map(([id, name]) => ({ id, name })));
-                    setAuthData(parseCSV(loginText));
-                } catch (err) { console.error("Fetch Error:", err); } finally { setIsLoading(false); }
+                    
+                    if (texts[3]) {
+                        const regUsers = parseCSV(texts[3]).slice(1).map(row => {
+                            const isDate = row[0] && row[0].includes('/');
+                            return { id: isDate ? (row[1] || '').trim() : (row[0] || '').trim(), name: isDate ? (row[2] || '').trim() : (row[1] || '').trim() };
+                        }).filter(u => u.id);
+                        setRegisteredUsers(regUsers);
+                    }
+                } catch (err) { console.error(err); } finally { setIsLoading(false); }
             };
 
             useEffect(() => { fetchData(); }, []);
 
             const metrics = useMemo(() => {
-                const currentMonthRevenue = waterBills.reduce((s, b) => s + b.total, 0);
-                const totalElectricPaid = expenses.reduce((s, e) => s + e.electric, 0);
-                const latestBalance = expenses.length > 0 ? expenses[expenses.length - 1].balance : 0;
-                const latestElectric = expenses.length > 0 ? expenses[expenses.length - 1].electric : 0;
-                return { currentMonthRevenue, totalElectricPaid, latestBalance, latestElectric };
+                const revenue = waterBills.reduce((s, b) => s + b.total, 0);
+                const electric = expenses.reduce((s, e) => s + e.electric, 0);
+                const balance = expenses.length > 0 ? expenses[expenses.length - 1].balance : 0;
+                const latestElec = expenses.length > 0 ? expenses[expenses.length - 1].electric : 0;
+                return { currentMonthRevenue: revenue, totalElectricPaid: electric, latestBalance: balance, latestElectric: latestElec };
             }, [waterBills, expenses]);
 
             const handleLogin = (e) => {
                 e.preventDefault();
-                const user = e.target.username.value.trim(); const pass = e.target.password.value.trim();
-                const isValid = authData.find(row => row[0] === user && row[1] === pass);
-                if (isValid) { setIsLoggedIn(true); setLoggedInUser(isValid[2] || 'นางศวรรยา  อุมงค์'); setView('admin_dashboard'); }
+                const u = e.target.username.value.trim(), p = e.target.password.value.trim();
+                const valid = authData.find(r => r[0] === u && r[1] === p);
+                if (valid) { setIsLoggedIn(true); setLoggedInUser(valid[2] || 'นางศวรรยา  อุมงค์'); setView('admin_dashboard'); }
                 else alert("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
             };
 
-            const getPreviousMeterValue = (houseNo) => {
+            const getPreviousMeterValue = useMemo(() => (houseNo) => {
                 const history = waterBills.filter(b => b.houseNo === houseNo);
                 return history.length === 0 ? 0 : history[history.length - 1].after || 0;
-            };
+            }, [waterBills]);
 
             return (
-                <div className="min-h-screen bg-[#F8FAFC] text-slate-900 print:bg-white print:pb-0 font-['Prompt']">
-                    <nav className="bg-white/90 backdrop-blur-xl border-b border-slate-100 sticky top-0 z-50 print:hidden shadow-sm">
-                        <div className="max-w-6xl mx-auto px-4 md:px-6 h-20 flex justify-between items-center">
+                <div className="min-h-screen text-slate-900 print:bg-white print:pb-0 font-['Prompt']">
+                    <nav className="bg-white/80 backdrop-blur-2xl border-b border-slate-200/50 sticky top-0 z-50 print:hidden shadow-sm">
+                        <div className="max-w-6xl mx-auto px-6 h-16 flex justify-between items-center">
                             <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('resident')}>
-                                <div className="bg-blue-600 p-2 md:p-2.5 rounded-xl shadow-lg shadow-blue-200"><Icon name="fa-droplet" size={22} className="text-white" /></div>
-                                <span className="font-extrabold text-2xl md:text-3xl tracking-tight uppercase italic">Water<span className="text-blue-600">Pro</span></span>
+                                <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-500/20"><Icon name="fa-droplet" size={20} className="text-white" /></div>
+                                <span className="font-extrabold text-xl md:text-2xl tracking-tighter uppercase italic text-slate-950">วารี<span className="text-blue-600">สมาร์ท</span></span>
                             </div>
                             <div className="hidden md:flex items-center gap-6">
                                 {isLoggedIn && (
                                     <div className="flex items-center gap-3">
-                                        <button onClick={() => setView('admin_dashboard')} className={`px-6 py-2.5 rounded-2xl text-xs font-black tracking-widest ${view === 'admin_dashboard' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'}`}>ADMIN</button>
-                                        <button onClick={() => { setIsLoggedIn(false); setView('resident'); }} className="p-2.5 text-red-500 hover:bg-red-50 rounded-2xl"><Icon name="fa-right-from-bracket" size={20} /></button>
+                                        <button onClick={() => setView('admin_dashboard')} className={`px-5 py-2 rounded-full text-xs font-black tracking-widest ${view === 'admin_dashboard' ? 'bg-slate-950 text-white shadow-xl' : 'text-slate-500 hover:bg-slate-100'}`}>ADMIN</button>
+                                        <button onClick={() => { setIsLoggedIn(false); setView('resident'); }} className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-all"><Icon name="fa-power-off" size={18} /></button>
                                     </div>
                                 )}
                             </div>
-                            <button className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}><Icon name={isMobileMenuOpen ? "fa-xmark" : "fa-bars"} size={24} /></button>
+                            <button className="md:hidden p-2 text-slate-950" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}><Icon name={isMobileMenuOpen ? "fa-xmark" : "fa-bars"} size={22} /></button>
                         </div>
                     </nav>
 
                     <main className="py-6 md:py-10 px-4 md:px-6 print:py-0 print:px-0">
                         {isLoading ? (
-                            <div className="flex flex-col items-center justify-center py-40 gap-6 print:hidden">
-                                <div className="w-14 h-14 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin"></div>
-                                <p className="font-black text-slate-400 uppercase tracking-[0.2em] text-xs">กำลังเชื่อมต่อข้อมูล...</p>
+                            <div className="flex flex-col items-center justify-center py-48 gap-6 print:hidden">
+                                <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
+                                <p className="font-bold text-slate-400 text-sm tracking-widest">W A R E E S M A R T</p>
                             </div>
                         ) : (
                             <>
                                 {view === 'resident' && <ResidentView waterBills={waterBills} searchQuery={searchQuery} setSearchQuery={setSearchQuery} metrics={metrics} setView={setView} isLoggedIn={isLoggedIn} />}
                                 {view === 'login' && (
-                                    <div className="flex items-center justify-center min-h-[65vh]">
-                                        <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl p-8 md:p-12 border border-slate-50 text-center">
-                                            <div className="bg-blue-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner"><Icon name="fa-lock" size={28} className="text-blue-600" /></div>
-                                            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight mb-8">เข้าสู่ระบบจัดการ</h2>
-                                            <form onSubmit={handleLogin} className="space-y-5 text-left">
-                                                <input name="username" type="text" required className="w-full p-4 md:p-5 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all placeholder-slate-400 text-slate-700" placeholder="ชื่อผู้ใช้" />
-                                                <input name="password" type="password" required className="w-full p-4 md:p-5 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all placeholder-slate-400 text-slate-700" placeholder="รหัสผ่าน" />
-                                                <button className="w-full bg-blue-600 text-white py-4 md:py-5 rounded-[1.5rem] font-black text-base shadow-lg shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all mt-4">เข้าสู่ระบบ</button>
+                                    <div className="flex items-center justify-center min-h-[60vh] px-4 animate-in slide-in-from-bottom-8 duration-500">
+                                        <div className="w-full max-w-sm bg-white rounded-[3rem] shadow-2xl p-10 md:p-12 border border-slate-100 text-center">
+                                            <div className="ios-icon-container bg-slate-100 text-slate-950 mx-auto flex items-center justify-center mb-8"><Icon name="fa-lock" size={28} /></div>
+                                            <h2 className="text-3xl font-extrabold text-slate-950 tracking-tighter mb-8">Admin Access</h2>
+                                            <form onSubmit={handleLogin} className="space-y-6 text-left">
+                                                <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">User Identity</label><input name="username" type="text" required className="w-full p-4 bg-slate-100 border-none rounded-2xl font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all text-slate-950" placeholder="ชื่อผู้ใช้" /></div>
+                                                <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Access Key</label><input name="password" type="password" required className="w-full p-4 bg-slate-100 border-none rounded-2xl font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all text-slate-950" placeholder="รหัสผ่าน" /></div>
+                                                <button className="w-full bg-slate-950 text-white py-4 rounded-2xl font-black text-base shadow-xl hover:bg-black active:scale-95 transition-all mt-6">Authenticate</button>
+                                                <button type="button" onClick={() => setView('resident')} className="w-full text-slate-400 font-bold py-2 text-sm">Return Home</button>
                                             </form>
                                         </div>
                                     </div>
                                 )}
                                 {isLoggedIn && (
-                                    <>
+                                    <div className="animate-in fade-in slide-in-from-bottom-6 duration-500">
                                         {view === 'admin_dashboard' && <AdminDashboard setView={setView} fetchData={fetchData} />}
                                         {view === 'print_bills' && <PrintBillsView setView={setView} waterBills={waterBills} loggedInUser={loggedInUser} />}
-                                        {view === 'record_meter' && <RecordMeterForm setView={setView} users={users} selectedUserId={selectedUserId} setSelectedUserId={setSelectedUserId} currentMeter={currentMeter} setCurrentMeter={setCurrentMeter} getPreviousMeterValue={getPreviousMeterValue} />}
+                                        {view === 'record_meter' && <RecordMeterForm setView={setView} users={users} registeredUsers={registeredUsers} getPreviousMeterValue={getPreviousMeterValue} />}
                                         {view === 'record_expense' && <RecordExpenseForm setView={setView} metrics={metrics} />}
-                                    </>
+                                    </div>
                                 )}
                             </>
                         )}
